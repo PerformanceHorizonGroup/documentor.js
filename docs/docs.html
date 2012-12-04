@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Documentor</title>
+	<meta charset="utf-8">
+	
+	<meta http-equiv="X-UA-Compatible" content="IE=8,chrome=1">
+	
+	<script type="text/javascript" src="../src/render/PHGDoc/resources/jquery-1.4.3.min.js"></script> 
+
+	<script type="text/javascript" src="../lib/util.js"></script>
+	<script type="text/javascript" src="../lib/events.js"></script>
+	<script type="text/javascript" src="../src/Documentor.js"></script>
+	<script type="text/javascript" src="../src/SourceLoader.js"></script>
+	<script type="text/javascript" src="../src/SourceProcessor.js"></script>
+	<script type="text/javascript" src="../src/render/DocumentationRenderer.js"></script>
+	
+	<link rel="stylesheet" href="../src/render/PHGDoc/resources/PHGDoc.css" type="text/css">
+	<script type="text/javascript" src="../src/render/PHGDoc/PHGDocRenderer.js"></script>
+
+	<script type="text/javascript">
+		var api=new Documentor.Api({
+			ns:{
+				name:'Documentor',
+				description:'Generates source code documentation'
+			},
+			sourceFiles:[
+				'../src/Documentor.js',
+				'../src/SourceLoader.js',
+				'../src/SourceProcessor.js',
+				'../src/render/DocumentationRenderer.js',
+				'../src/render/PHGDoc/PHGDocRenderer.js'
+			],
+			sourceLoader:new Documentor.AjaxSourceLoader(),
+			sourceProcessor:new Documentor.PHGSourceProcessor(),
+			renderer:new Documentor.render.PHGDocRenderer()
+		});
+	</script>
+</head>
+<body>
+	
+</body>
+</html>

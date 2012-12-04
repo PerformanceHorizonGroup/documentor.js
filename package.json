@@ -1,0 +1,26 @@
+{
+	"name":"documentor.js",
+	"version":"0.1.0",
+	"author":"PHG <techies@performancehorizon.com>",
+	"description":"Documentation generation tool",
+	"contributors":[{
+		"name":"Georgi Kostov",
+		"email":"georgi.kostov@performancehorizon.com"
+	}],
+	"main":"./src/Documentor.js",
+	"repository":{
+		"type":"git",
+		"url":"https://github.com/PerformanceHorizonGroup/documentor.js.git"
+	},
+	"keywords":[
+		"documentation",
+		"generation",
+		"generator"
+	],
+	"dependencies" :{
+	},
+	"license":"MIT",
+	"engine":{
+		"node":">=0.4.1"
+	}
+}

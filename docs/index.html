@@ -1,0 +1,301 @@
+<!DOCTYPE html><html><head><title>Documentor</title><meta charset="utf-8"><script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script><link rel="stylesheet" href="resources/PHGDoc.css" type="text/css"><script type="text/javascript">function renderer(api){
+		function printNS(obj){ // print menu items
+			var html='<ul>',
+				titleStr='';
+			if(obj.type=='api')
+				titleStr=obj.name.split('.').pop();
+			else if(obj.type=='namespace')
+				titleStr='<em>namespace</em> '+obj.name.split('.').pop();
+			else if(obj.type=='module')
+				titleStr='<em>module</em> '+obj.name.split('.').pop();
+			else{
+				titleStr='<span>'+obj.name.split('.').pop();
+				if(obj.flags && !$.isEmptyObject(obj.flags)){
+					var flags=[];
+					for(var f in obj.flags)
+						if(obj.flags[f])
+							flags.push(f.charAt(0));
+					if(flags.length)
+						titleStr+=' <span class="object-attributes">('+flags.join()+')</span>';
+				}
+				titleStr+='</span>';
+			}
+			html+='<li class="object-title obj-link" ns-path="'+obj.name+'">'+titleStr+'</li>';
+			
+			var children=[];
+			for(var c in obj.children)
+				children.push(obj.children[c]);
+			children.sort(function (a, b){
+				return (a.name<b.name?-1:(a.name>b.name?1:0));
+			});
+			for(var i=0; i<children.length; ++i){
+				html+='<li class="children-list">'+printNS(children[i])+'</li>';
+			}
+			
+			html+='</ul>';
+			return html;
+		}
+		$('body').append('<table width="100%"><tr><td id="apiTree" width="30%" valign="top">'+printNS(api.ns)+'</td><td id="selectionInfo" valign="top"></td></tr></table>');
+		var storage={
+			hideInherited:false
+		};
+		$('.hide-inherited').live('click', function (){
+			storage.hideInherited=this.checked;
+			renderObj(storage.obj);
+		});
+		function renderObj(obj){
+			storage.obj=obj;
+			var hierarchy=[[obj.name, obj]],
+				html='',
+				list;
+			if('extends' in obj){
+				var parentClass=obj['extends'],
+					parentClassObj=api.getNSObject(parentClass);
+				do{
+					var hObj=[parentClass, null];
+					hierarchy.unshift(hObj);
+					if(parentClassObj){
+						hObj[1]=parentClassObj;
+						if('extends' in parentClassObj){
+							parentClass=parentClassObj['extends'];
+							parentClassObj=api.getNSObject(parentClass);
+						}else
+							parentClass=null;
+					}else
+						parentClass=null;
+				}while(parentClass);
+				var cls=hierarchy[0];
+				html+='<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title'+(cls[1]?(' obj-link" ns-path="'+cls[0]+'"'):'"')+'>'+cls[0]+'</div>';
+				var ending='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title">'+hierarchy[hierarchy.length-1][0]+'</div></div>' +
+						'</div></div>';
+				for(var i=1; i<hierarchy.length-1; i++){
+					html+='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title'+(hierarchy[i][1]?(' obj-link" ns-path="'+hierarchy[i][0]+'"'):'"')+'>'+hierarchy[i][0]+'</div>';
+					ending+='</div>';
+				}
+				html+=ending;
+			}
+			html+='<div>'+(obj.type!='api'?obj.type:'')+' <strong>'+obj.name+'</strong>';
+			if(!$.isEmptyObject(obj.flags)){
+				var flags=[];
+				for(var f in obj.flags)
+					if(obj.flags[f])
+						flags.push(f);
+				if(flags.length)
+					html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
+			}
+			if('definedIn' in obj)
+				html+='<div>defined in: '+obj.definedIn.split('/').pop()+'</div>';
+			if(obj.description)
+				html+='<p>'+obj.description+'</p>';
+			html+='</div>';
+			html+='<div class="clear">';
+			if(obj.type=='class')
+				html+='<input type="checkbox"'+(storage.hideInherited?' checked':'')+' class="hide-inherited"> hide inherited';
+			html+='</div>';
+			
+			/**
+			 * TO-DO: add a check to each member block to determine if it needs to be expandable
+			 */
+			function getMembersList(type){
+				var members={}, list=[];
+				// put members from all parents in the hash
+				for(var i=storage.hideInherited?(hierarchy.length-1):0; i<hierarchy.length; ++i)
+					if(hierarchy[i][1]) // if this class is in the API
+						for(var m in hierarchy[i][1][type])
+							if(!(m in members)) // skip overriden members
+								members[m]=$.extend({definingClass:hierarchy[i][1].name}, hierarchy[i][1][type][m]);
+				// move the members to a list
+				for(var m in members)
+					list.push(members[m]);
+				// sort the list ASC by member name
+				list.sort(function (a, b){
+					return a.name<b.name?-1:(a.name>b.name?1:0);
+				});
+				return list;
+			}
+			// config
+			if('config' in obj){
+				list=getMembersList('config');
+				if(list.length){
+					html+='<div class="members">' +
+							'<div class="members-head"><em class="members-title">configuration options:</em><div class="defined-by">defined by</div></div>';
+					for(var i=0; i<list.length; ++i){
+						html+='<div class="member">' +
+									'<div class="member-expand">&nbsp;</div>' +
+									'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+									'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
+									'<div class="member-summary">';
+						var summary=list[i].summary||list[i].description;
+						if(summary)
+							html+=summary.substring(0, 100);
+						if(summary.length>100)
+							html+='...';
+						html+='</div>' +
+//										'<div class="member-summary">'+(list[i].summary||list[i].description).substring(0, 100)+'...</div>' +
+									'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
+								'</div>';
+					}
+					html+='</div>';
+				}
+			}
+			// properties
+			if('properties' in obj){
+				list=getMembersList('properties');
+				if(list.length){
+					html+='<div class="members">' +
+							'<div class="members-head"><em class="members-title">properties:</em><div class="defined-by">defined by</div></div>';
+					for(var i=0; i<list.length; ++i){
+						html+='<div class="member">' +
+									'<div class="member-expand">&nbsp;</div>' +
+									'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+									'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
+									'<div class="member-summary">';
+						var summary=list[i].summary||list[i].description;
+						if(summary)
+							html+=summary.substring(0, 100);
+						if(summary.length>100)
+							html+='...';
+						html+='</div>' +
+									'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
+								'</div>';
+					}
+					html+='</div>';
+				}
+			}
+			// methods
+			if('methods' in obj){
+				list=getMembersList('methods');
+				if(list.length){
+					html+='<div class="members"><div class="members-head"><em class="members-title">methods:</em><div class="defined-by">defined by</div></div>';
+					for(var i=0; i<list.length; ++i){
+						html+='<div class="member">' +
+								'<div class="member-expand">&nbsp;</div>' +
+								'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+								'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
+						var paramsList=[];
+						for(var p=0; p<list[i].params.length; ++p){
+							var paramStr=list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>';
+							if(list[i].params[p].optional)
+								paramStr='['+paramStr+']';
+							paramsList.push(paramStr);
+						}
+						html+=paramsList.join(', ');
+						html+=' ) : '+(list[i].returns.type||'void');
+						if(!$.isEmptyObject(list[i].flags)){
+							var flags=[];
+							for(var f in list[i].flags)
+								if(list[i].flags[f])
+									flags.push(f);
+							if(flags.length){
+								html+=' [';
+								for(var f=0; f<flags.length; ++f)
+									html+='<span class="method-flag">'+flags[f]+'</span>';
+								html+=']';
+							}
+						}
+						html+='</div>' +
+								'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>'+
+								'<div class="member-description"><div>'+(list[i].description||list[i].summary)+'</div>';
+						// add Parameters and Returns (if any) to member-description 
+						if(paramsList.length){
+							html+='Parameters:<ul>';
+							for(var p=0; p<list[i].params.length; ++p){
+								html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>';
+								if(list[i].params[p].optional)
+									html+='(optional) ';
+								html+=(list[i].params[p].description)+'</div></li>'; // ||list[i].params[p].summary
+							}
+							html+='</ul>';
+						}
+						if(list[i].returns.type!='void'){
+							html+='Returns:<ul>';
+							html+='<li><span class="pre">'+list[i].returns.type+'</span><div>'+list[i].returns.summary+'</div></li>';
+							html+='</ul>';
+						}
+						html+='</div></div>';
+					}
+					html+='</div>';
+				}
+			}
+			// events
+			if('events' in obj){
+				list=getMembersList('events');
+				if(list.length){
+					html+='<div class="members"><div class="members-head"><em class="members-title">events:</em><div class="defined-by">defined by</div></div>';
+					for(var i=0; i<list.length; ++i){
+						html+='<div class="member">' +
+								'<div class="member-expand">&nbsp;</div>' +
+								'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+								'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
+						var paramsString=[];
+						for(var p=0; p<list[i].params.length; ++p)
+							paramsString.push(list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>');
+						html+=paramsString.join(', ');
+						html+=' )</div>' +
+								'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>' +
+								'<div class="member-description"><div>'+(list[i].description || list[i].summary)+'</div>';
+						// add Parameters (if any) to member-description 
+						if(paramsString.length){
+							html+='Parameters:<ul>';
+							for(var p=0; p<list[i].params.length; ++p)
+								html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>'+(list[i].params[p].description)+'</div></li>';
+							html+='</ul>';
+						}
+						html+='</div></div>';
+					}
+					html+='</div>';
+				}
+			}
+			
+			$('#selectionInfo').html(html);
+		}
+		$('.obj-link').live('click', function (){
+			location.hash=$(this).attr('ns-path');
+//				renderObj(api.getNSObject($(this).attr('ns-path')));
+		});
+		$('.member-expand').live('click', function (){
+			$(this).parent().toggleClass('expanded');
+		});
+		
+		function renderObjectFromHash(){
+			$('.object-title.active').removeClass('active');
+			var obj=api.getNSObject(location.hash.substring(1));
+			if(obj){
+				$('.object-title[ns-path='+obj.name+']').addClass('active');
+				renderObj(obj);
+			}
+		}
+		if(location.hash!='')
+			renderObjectFromHash();
+		$(window).bind( 'hashchange', renderObjectFromHash);
+	}var api={"ns":{"name":"Documentor","type":"api","children":{"Api":{"description":"Excapsulates all data, configuration and methods of the target API's documentation.\r","summary":"","config":{"sourceLoader":{"description":"The loader to use.\r\t\t\t ","summary":"","name":"sourceLoader","dataType":"Documentor.SourceLoader"},"renderer":{"description":"If provided will call its render() method after the last source file is processed.\r\t\t\t ","summary":"","name":"renderer","dataType":"Documentor.render.DocumentationRenderer"},"sourceProcessor":{"description":"The source processor to use. \r\t\t\t ","summary":"","name":"sourceProcessor","dataType":"Documentor.SourceProcessor"}},"properties":{"ns":{"description":"This object has the complete API description. It has very little upon creation but the SourceProcessor object's job is to fill it with details.\r\t\t\t ","summary":"","name":"ns","dataType":"Object"}},"methods":{"getNSObject":{"description":"Returns the namespace object on the given path.\r","summary":"","name":"getNSObject","params":[{"description":"","name":"path","optional":false,"dataType":"String"},{"description":"Set to true to have a \"namespace\" object created if nothing exists for that path.\r","name":"autoCreate","optional":true,"dataType":"Boolean"}],"returns":{"type":"Object","summary":"The object on that path.\r"},"flags":{}}},"events":{"sourceProcessed":{"description":"Fires when a source file has been processed.\r","summary":"","name":"sourceProcessed","params":[{"description":"","name":"this","optional":false,"dataType":"Documentor.Api"},{"description":"","name":"fileURL","optional":false,"dataType":"String"}]}},"definedIn":"../src/Documentor.js","flags":{},"type":"class","name":"Documentor.Api","extends":"EventEmitter"},"SourceLoader":{"description":"Base class for a source file loader.\r\t ","summary":"","config":{},"properties":{},"methods":{"getSourceFile":{"description":"Returns file contents asynchronously if a callback is specified and may return immediately if there is no callback and the content can be retrieved synchronously.\r","summary":"","name":"getSourceFile","params":[{"description":"Source file locator.\r","name":"fileURL","optional":false,"dataType":"String"},{"description":"A callback to send file contents to when available. Two parameters are passed : {String} fileData and {String} fileURL .\r","name":"cb","optional":true,"dataType":"Function"}],"returns":{"type":"String","summary":"fileData\tFile contents or null if the cb parameter was given.\r"},"flags":{}}},"events":{},"definedIn":"../src/SourceLoader.js","flags":{},"type":"class","name":"Documentor.SourceLoader"},"AjaxSourceLoader":{"description":"Source file loader using AJAX to get file contents.\r\t ","summary":"","config":{},"properties":{},"methods":{},"events":{},"definedIn":"../src/SourceLoader.js","flags":{},"type":"class","name":"Documentor.AjaxSourceLoader","extends":"Documentor.SourceLoader"},"FileSourceLoader":{"description":"Loads the source from a file.\r","summary":"","config":{},"properties":{},"methods":{},"events":{},"definedIn":"../src/SourceLoader.js","flags":{},"type":"class","name":"Documentor.FileSourceLoader","extends":"Documentor.SourceLoader"},"SourceProcessor":{"description":"Base class for a source file prcessor.\r\t ","summary":"","config":{},"properties":{},"methods":{"process":{"description":"Parses the source code and updates the specified API object. \r","summary":"","name":"process","params":[{"description":"Source file contents.\r","name":"fileData","optional":false,"dataType":"String"},{"description":"The API object to amend.\r","name":"api","optional":false,"dataType":"Documentor.Api"}],"returns":{"type":"void","summary":""},"flags":{}}},"events":{},"definedIn":"../src/SourceProcessor.js","flags":{},"type":"class","name":"Documentor.SourceProcessor"},"PHGSourceProcessor":{"description":"Source file processor for JS source code from PHG. It extracts and processes javaDoc style comments in source.\r The set of tags it recognizes is mostly borrowed from ExtJS.\r\t ","summary":"","config":{},"properties":{"docTagProcessors":{"description":"A hash keyed by the tag names that this object can process. At each key there's a parser function which will be given a line to process. \r\t\t ","summary":"","name":"docTagProcessors","dataType":"Object"}},"methods":{},"events":{},"definedIn":"../src/SourceProcessor.js","flags":{},"type":"class","name":"Documentor.PHGSourceProcessor","extends":"Documentor.SourceProcessor"},"render":{"type":"namespace","name":"render","children":{"DocumentationRenderer":{"description":"Base class for a documentation renderer.\r\t ","summary":"","config":{},"properties":{},"methods":{"render":{"description":"Renders the documentation from the given API object\r","summary":"","name":"render","params":[{"description":"The API object to render.\r","name":"api","optional":false,"dataType":"Documentor.Api"}],"returns":{"type":"void","summary":""},"flags":{}}},"events":{},"definedIn":"../src/render/DocumentationRenderer.js","flags":{},"type":"class","name":"Documentor.render.DocumentationRenderer"},"PHGDocRenderer":{"description":"Renders the documentaion tree.\r\t ","summary":"","config":{"exportFile":{"description":"","summary":"Write the generated content into a file a instead of the current web page.\r","name":"exportFile","dataType":"String"}},"properties":{},"methods":{},"events":{},"definedIn":"../src/render/PHGDoc/PHGDocRenderer.js","flags":{},"type":"class","name":"Documentor.render.PHGDocRenderer","extends":"Documentor.render.DocumentationRenderer"}}}},"description":"Generates source code documentation"}};api.getNSObject=function (path, autoCreate){
+			var obj=this.ns,
+				pathNames = typeof path=='string'?path.split('.'):path;
+			if(typeof path=='string')
+				pathNames=path.split('.');
+			else{
+				pathNames=path;
+				path=path.join('.');
+			}
+			if(pathNames.length){
+				var currentPath=[];
+				if(pathNames[0]==this.ns.name)
+					pathNames.shift();
+				while(pathNames.length){
+					var p=pathNames.shift();
+					currentPath.push(p);
+					if(!(p in obj.children)){
+						if(autoCreate)
+							obj.children[p]={
+								type:'namespace',
+								name:currentPath.join('.'),
+								children:{}
+							};
+						else
+							return null;
+					}
+					obj=obj.children[p];
+				}
+			}
+			return obj;
+		};$(document).ready(function (){ renderer(api); });</script></head><body></body></html>
