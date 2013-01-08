@@ -277,7 +277,7 @@
 				if(this.processingDataStorage.currentMethodObj){
 					this.processingDataStorage.currentMethodObj.flags['static'] = true;		
 				}else
-					console.warn('@return tag must appear *after* @method !!! ['+this.processingDataStorage.fileURL+':'+this.processingDataStorage.currentLine+']');
+					console.warn('@static tag must appear *after* @method !!! ['+this.processingDataStorage.fileURL+':'+this.processingDataStorage.currentLine+']');
 			}
 		},
 		processNextComment:function (commentContent){
