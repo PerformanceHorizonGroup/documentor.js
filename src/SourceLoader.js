@@ -64,6 +64,45 @@
 	Documentor.FileSourceLoader=function (cfg){
 		Documentor.FileSourceLoader.super_.apply(this, arguments);
 	};
+	/**
+	 * @method listFiles
+	 * @static
+	 * Find all files matched by the pattern which may include the * and ? wildcards. The search is performed synchronously.
+	 * @param	{String}	pattern	The string to match file names for.
+	 * @return	{Array}	A list of files matched for the pattern.
+	 */
+	Documentor.FileSourceLoader.listFiles=function (pattern){
+		var list=[],
+			path=require('path'),
+			fs=require('fs');
+		pattern=path.resolve(pattern); // get the absolute path
+
+		var i=pattern.indexOf('*');
+		if(i>-1 || (i=pattern.indexOf('?'))>-1){
+			var dir=path.dirname(pattern.substr(0, i)),
+				matcher=new RegExp('^'+pattern.replace(/\\/g, '\\\\').replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.')+'$');
+			function listFilesInDir(dir){
+//				var list=[],
+				var files=fs.readdirSync(dir);
+				for(var i=0; i<files.length; i++){
+					files[i]=path.join(dir, files[i]);
+					var stats=fs.lstatSync(files[i]);
+					if(stats.isDirectory())
+						listFilesInDir(files[i]); //list=list.concat(listFilesInDir(files[i]));
+					else if(stats.isFile() && matcher.test(files[i]))
+						list.push(files[i]);
+				}
+//				return list;
+			}
+			listFilesInDir(dir);
+//			list=listFilesInDir(dir);
+		}else{ // if there are no wildcards in the pattern
+			if(fs.existsSync(pattern))
+				list.push(pattern);
+		}
+		
+		return list;
+	};
 	util.inherits(Documentor.FileSourceLoader, Documentor.SourceLoader);
 	util.extend(Documentor.FileSourceLoader.prototype, {
 		getSourceFile:function (fileName, cb){
