@@ -77,6 +77,7 @@
 						'<script type="text/javascript">');
 				file.write(renderer.toString());
 				file.write('var api='+JSON.stringify({ns:api.ns})+';');
+				file.write('api.NSPathSeparator=\''+api.NSPathSeparator+'\';');
 				file.write('api.getNSObject='+api.getNSObject.toString()+';');
 				file.write('$(document).ready(function (){ '+renderer.name+'(api); });');
 				file.write('</script>' +
@@ -94,13 +95,13 @@
 			var html='<ul>',
 				titleStr='';
 			if(obj.type=='api')
-				titleStr=obj.name.split('.').pop();
+				titleStr=obj.name.split(api.NSPathSeparator).pop();
 			else if(obj.type=='namespace')
-				titleStr='<em>namespace</em> '+obj.name.split('.').pop();
+				titleStr='<em>namespace</em> '+obj.name.split(api.NSPathSeparator).pop();
 			else if(obj.type=='module')
-				titleStr='<em>module</em> '+obj.name.split('.').pop();
+				titleStr='<em>module</em> '+obj.name.split(api.NSPathSeparator).pop();
 			else{
-				titleStr='<span>'+obj.name.split('.').pop();
+				titleStr='<span>'+obj.name.split(api.NSPathSeparator).pop();
 				if(obj.flags && !$.isEmptyObject(obj.flags)){
 					var flags=[];
 					for(var f in obj.flags)

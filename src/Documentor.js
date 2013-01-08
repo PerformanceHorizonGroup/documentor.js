@@ -28,6 +28,11 @@
 	util.inherits(Documentor.Api, emitter);
 	
 	util.extend(Documentor.Api.prototype, {
+		/**
+		 * @cfg	{String}	NSPathSeparator
+		 * Defaults to the dot character (".") .
+		 */
+		NSPathSeparator:'.',
 		initialize:function (){
 			var defNS={
 				name:'API',
@@ -94,12 +99,12 @@
 		 */
 		getNSObject:function (path, autoCreate){
 			var obj=this.ns,
-				pathNames = typeof path=='string'?path.split('.'):path;
+				pathNames = typeof path=='string'?path.split(this.NSPathSeparator):path;
 			if(typeof path=='string')
-				pathNames=path.split('.');
+				pathNames=path.split(this.NSPathSeparator);
 			else{
 				pathNames=path;
-				path=path.join('.');
+				path=path.join(this.NSPathSeparator);
 			}
 			if(pathNames.length){
 				var currentPath=[];
@@ -112,7 +117,7 @@
 						if(autoCreate)
 							obj.children[p]={
 								type:'namespace',
-								name:currentPath.join('.'),
+								name:currentPath.join(this.NSPathSeparator),
 								children:{}
 							};
 						else
