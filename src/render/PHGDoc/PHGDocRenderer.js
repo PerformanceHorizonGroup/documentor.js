@@ -34,7 +34,7 @@
 		 * @cfg {String}	exportPath (optional)	Write the generated content into a folder a instead of the current web page.
 		 */
 		/**
-		 * @cfg {String}	resourceIncludes (optional)	Write the generated content into a folder a instead of the current web page.
+		 * @cfg {String}	resourceIncludes (optional)	The HTML to include JS and CSS resources. By default it refers to "resources/jquery-1.4.3.min.js" and "resources/PHGDoc.css".
 		 */
 		resourceIncludes:'<script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script>' +
 						'<link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">',
