@@ -31,9 +31,14 @@
 	util.inherits(ns.PHGDocRenderer, docRenderer);
 	util.extend(ns.PHGDocRenderer.prototype, {
 		/**
-		 * @cfg {String}	exportFile (optional)	Write the generated content into a file a instead of the current web page.
+		 * @cfg {String}	exportPath (optional)	Write the generated content into a folder a instead of the current web page.
 		 */
 		initialize:function (){
+			/**
+			 * @cfg {Function} renderFn	(optional)	The rendering function which will print the api tree and details.
+			 */
+			if(!this.renderFn)
+				this.renderFn=renderFn;
 			if(this.api)
 				this.render(this.api);
 		},
@@ -74,23 +79,23 @@
 						'<meta charset="utf-8">' +
 						'<script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script>' +
 						'<link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">' +
-						'<script type="text/javascript">');
-				file.write(renderer.toString());
+						'<script type="text/javascript">(function (){');
+				file.write(this.renderFn.toString());
 				file.write('var api='+JSON.stringify({ns:api.ns})+';');
 				file.write('api.NSPathSeparator=\''+api.NSPathSeparator+'\';');
 				file.write('api.getNSObject='+api.getNSObject.toString()+';');
-				file.write('$(document).ready(function (){ '+renderer.name+'(api); });');
-				file.write('</script>' +
+				file.write('$(document).ready(function (){ '+this.renderFn.name+'(api); });');
+				file.write('}());</script>' +
 						'</head>' +
 						'<body>' +
 						'</body>' +
 						'</html>');
 								
 			}else
-				renderer(api);
+				this.renderFn(api);
 		}
 	});
-	function renderer(api){
+	function renderFn(api){
 		function printNS(obj){ // print menu items
 			var html='<ul>',
 				titleStr='';
