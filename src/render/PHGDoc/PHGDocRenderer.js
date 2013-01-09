@@ -33,6 +33,11 @@
 		/**
 		 * @cfg {String}	exportPath (optional)	Write the generated content into a folder a instead of the current web page.
 		 */
+		/**
+		 * @cfg {String}	resourceIncludes (optional)	Write the generated content into a folder a instead of the current web page.
+		 */
+		resourceIncludes:'<script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script>' +
+						'<link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">',
 		initialize:function (){
 			/**
 			 * @cfg {Function} renderFn	(optional)	The rendering function which will print the api tree and details.
@@ -63,11 +68,6 @@
 					});
 				}
 				['jquery-1.4.3.min.js', 'PHGDoc.css', 'images/expanded.png', 'images/collapsed.png', 'images/arrow_end.gif'].forEach(copyResourceFileIf);
-//				copyResourceFileIf('jquery-1.4.3.min.js');
-//				copyResourceFileIf('PHGDoc.css');
-				/**
-				 * TO-DO: copy files from /resources/images too
-				 */
 				var file=fs.createWriteStream(path.resolve(docPath, 'index.html'), { flags: 'w'});
 				file.on('error', function (err) {
 					console.log(err);
@@ -76,9 +76,8 @@
 						'<html>' +
 						'<head>' +
 						'<title>'+api.ns.name+'</title>' +
+						this.resourceIncludes +
 						'<meta charset="utf-8">' +
-						'<script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script>' +
-						'<link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">' +
 						'<script type="text/javascript">(function (){');
 				file.write(this.renderFn.toString());
 				file.write('var api='+JSON.stringify({ns:api.ns})+';');
