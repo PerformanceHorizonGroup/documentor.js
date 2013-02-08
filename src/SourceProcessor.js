@@ -268,8 +268,8 @@
 					console.warn('@return tag must appear *after* @method !!! ['+this.processingDataStorage.fileURL+':'+this.processingDataStorage.currentLine+']');
 			},
 			'private':function (line){
-				if(this.processingDataStorage.currentDescribableObj)
-					this.processingDataStorage.currentDescribableObj.flags['private'] = true;		
+				if(this.processingDataStorage.currentMethodObj)
+					this.processingDataStorage.currentMethodObj.flags['private'] = true;		
 				else
 					console.warn('@private tag must appear *after* @class or @method !!! ['+this.processingDataStorage.fileURL+':'+this.processingDataStorage.currentLine+']');
 			},
