@@ -297,7 +297,9 @@
 						descriptionTxt=null;
 					}
 				}.scope(this);
+			this.processingDataStorage.currentLine-=commentContent.length;
 			for(var i=0; i<commentContent.length; i++){
+				++this.processingDataStorage.currentLine;
 				var line=commentContent[i]; //.replace(commentLineStartMatcher, '');
 				var tagMatch=line.match(tagMatcher);
 				if(tagMatch){
@@ -398,7 +400,8 @@
 				}
 				return result;
 			}
-			for(var i=0; i<lines.length; i++, this.processingDataStorage.currentLine++){
+			for(var i=0; i<lines.length; i++){
+				this.processingDataStorage.currentLine=i+1;
 				var line=lines[i];
 				if(processingComment){
 					// try to find comment end
