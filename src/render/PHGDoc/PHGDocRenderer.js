@@ -31,7 +31,9 @@
 	util.inherits(ns.PHGDocRenderer, docRenderer);
 	util.extend(ns.PHGDocRenderer.prototype, {
 		/**
-		 * @cfg {String}	exportPath (optional)	Write the generated content into a folder a instead of the current web page.
+		 * @cfg {String}	exportPath (optional)
+		 * If the option is not given then it is assumed that the code runs in a browser and will render
+		 * in the current page. Add this option when running in node.js and the generated content will go into a folder instead. 
 		 */
 		/**
 		 * @cfg {String}	resourceIncludes (optional)	The HTML to include JS and CSS resources. By default it refers to "resources/jquery-1.4.3.min.js" and "resources/PHGDoc.css".
@@ -170,7 +172,7 @@
 				}
 				html+=ending;
 			}
-			html+='<div>'+(obj.type!='api'?obj.type:'')+' <strong>'+obj.name+'</strong>';
+			html+='<div><em>'+(obj.type!='api'?obj.type:'')+'</em> <strong>'+obj.name+'</strong>';
 			if(!$.isEmptyObject(obj.flags)){
 				var flags=[];
 				for(var f in obj.flags)
@@ -180,9 +182,15 @@
 					html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
 			}
 			if('definedIn' in obj)
-				html+='<div>defined in: '+obj.definedIn.split('/').pop()+'</div>';
+				html+='<div><em>defined in:</em> '+obj.definedIn.split('/').pop()+'</div>';
 			if(obj.description)
 				html+='<p>'+obj.description+'</p>';
+			if('subclasses' in obj){
+				list=[];
+				for(var i=0; i<obj.subclasses.length; i++)
+					list.push('<span class="obj-link" ns-path="'+obj.subclasses[i].name+'">'+obj.subclasses[i].name+'</span>');
+				html+='<p><em>subclasses:</em> '+list.join(', ')+'</p>';
+			}				
 			html+='</div>';
 			html+='<div class="clear">';
 			if(obj.type=='class')
@@ -361,9 +369,27 @@
 				renderObj(obj);
 			}
 		}
+		$(window).bind( 'hashchange', renderObjectFromHash);
+		(function (){
+			// run through all classes and compile their "subclasses"
+			function processObj(obj){
+				if(obj.type=='class' && obj['extends']){
+					var extObj=api.getNSObject(obj['extends']);
+					if(extObj){
+						if(!extObj.subclasses)
+							extObj.subclasses=[];
+						extObj.subclasses.push(obj);
+					}
+				}
+				if(obj.children)
+					for(var c in obj.children)
+						processObj(obj.children[c]);
+			}
+			processObj(api.ns);
+		}());
+			
 		if(location.hash!='')
 			renderObjectFromHash();
-		$(window).bind( 'hashchange', renderObjectFromHash);
 	}
 	
 }());
