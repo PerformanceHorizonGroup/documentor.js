@@ -98,7 +98,7 @@
 		 * @return	{Object}	The object on that path.
 		 */
 		getNSObject:function (path, autoCreate){
-			var obj=this.ns,
+			var obj=null,
 				pathNames = typeof path=='string'?path.split(this.NSPathSeparator):path;
 			if(typeof path=='string')
 				pathNames=path.split(this.NSPathSeparator);
@@ -107,6 +107,7 @@
 				path=path.join(this.NSPathSeparator);
 			}
 			if(pathNames.length){
+				obj=this.ns;
 				var currentPath=[];
 				if(pathNames[0]==this.ns.name)
 					pathNames.shift();
