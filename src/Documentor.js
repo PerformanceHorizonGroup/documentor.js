@@ -119,7 +119,9 @@
 							obj.children[p]={
 								type:'namespace',
 								name:currentPath.join(this.NSPathSeparator),
-								children:{}
+								children:{},
+								methods:{},
+								description:''
 							};
 						else
 							return null;

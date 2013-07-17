@@ -4,9 +4,9 @@
 	var ns, util, docRenderer;
 	
 	if(typeof module == 'object' && module.exports){
-		util=require('../../../lib/util');
+		util=require('../../lib/util');
 		ns=module.exports;
-		docRenderer=require('../DocumentationRenderer').DocumentationRenderer;
+		docRenderer=require('../render/DocumentationRenderer').DocumentationRenderer;
 	}else{
 		util=window.util;
 		ns=util.ns('Documentor.render');
@@ -16,7 +16,7 @@
 	/**
 	 * TO-DO: add search facility
 	 * TO-DO: move "live" JS code to a separate include so that it can be used in generated static HTML documentation.
-	 * TO-DO: add "Descendent Classes" list to the class description head.
+	 * TO-DO: add "view-source" feature.
 	 */
 
 	/**

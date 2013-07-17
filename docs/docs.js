@@ -8,14 +8,15 @@ var api=new (require('../src/Documentor').Api)({
 		'../src/SourceLoader.js',
 		'../src/SourceProcessor.js',
 		'../src/render/DocumentationRenderer.js',
-		'../src/render/PHGDoc/PHGDocRenderer.js'
+		'../src/PHGDoc/PHGSourceProcessor.js',
+		'../src/PHGDoc/PHGDocRenderer.js'
 	],
 	sourceLoader:new (require('../src/SourceLoader').FileSourceLoader)(),
-	sourceProcessor:new (require('../src/SourceProcessor').PHGSourceProcessor)(),
+	sourceProcessor:new (require('../src/PHGDoc/PHGSourceProcessor').PHGSourceProcessor)(),
 	listeners:{
 		'sourceProcessed':function (fileURL){
 			if(api.sourceFiles.length==0)
-				(new (require('../src/render/PHGDoc/PHGDocRenderer').PHGDocRenderer)({exportPath:'.'})).render(this);
+				(new (require('../src/PHGDoc/PHGDocRenderer').PHGDocRenderer)({exportPath:'.'})).render(this);
 		}
 	}
 });
