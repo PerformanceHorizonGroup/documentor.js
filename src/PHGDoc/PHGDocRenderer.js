@@ -50,7 +50,7 @@
 				this.render(this.api);
 		},
 		render:function (api){
-			if('exportPath' in this){
+			if('exportPath' in this){ // we are writing static doc files
 				var fs=require('fs'),
 					path=require('path'),
 					docPath=path.resolve(this.exportPath);
@@ -60,7 +60,7 @@
 						if(err){ // if it does not exist then copy it over from "resources"
 							var resFolder=path.resolve(__dirname, 'resources'),
 								targetResFolder=path.dirname(targetName); 
-							if(!path.existsSync(targetResFolder))
+							if(!fs.existsSync(targetResFolder))
 								fs.mkdirSync(targetResFolder);
 							require('util').pump(
 								fs.createReadStream(path.resolve(resFolder, fileName)),
@@ -69,7 +69,7 @@
 						}
 					});
 				}
-				['jquery-1.4.3.min.js', 'PHGDoc.css', 'images/expanded.png', 'images/collapsed.png', 'images/arrow_end.gif'].forEach(copyResourceFileIf);
+				['jquery-1.4.3.min.js', 'PHGDoc.css', 'images/expanded.png', 'images/collapsed.png', 'images/arrow.gif', 'images/arrow_end.gif'].forEach(copyResourceFileIf);
 				var file=fs.createWriteStream(path.resolve(docPath, 'index.html'), { flags: 'w'});
 				file.on('error', function (err) {
 					console.log(err);
