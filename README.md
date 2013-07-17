@@ -1,6 +1,6 @@
 # documentor.js
 
-Source code documentation generator written in JS aiming for speed, flexibility and convenience.
+Source code documentation generator written in JS and aiming for speed, flexibility and convenience.
 
 It is:
 

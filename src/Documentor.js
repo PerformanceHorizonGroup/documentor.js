@@ -72,8 +72,8 @@
 				}.scope(this);
 			for(var i=0; i<this.sourceFiles.length; i++){
 				var d=this.sourceLoader.getSourceFile(this.sourceFiles[i], fileLoadedCb);
-				if(d) // if the loader returned contents synchronously
-					fileLoadedCb(d, this.sourceFiles[i]);
+//				if(d) // if the loader returned contents synchronously
+//					fileLoadedCb(d, this.sourceFiles[i]);
 			}
 		},
 		sourceFileEnd:function (fileURL){

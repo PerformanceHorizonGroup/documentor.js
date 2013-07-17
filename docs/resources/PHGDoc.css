@@ -31,6 +31,9 @@ li.object-title{
 li.object-title.active{
 	background-color:#def7fe;
 }
+li.object-title em{
+	color:#aaa;
+}
 .obj-link{
 	cursor:default;
 }
@@ -43,7 +46,13 @@ li.object-title.active{
 }
 
 li.children-list{
+	background-image:url(images/arrow.gif);
+	background-repeat:no-repeat;
+	background-position:left -38px;
 	list-style-type:none;
+}
+li.children-list:last-child{
+	background-image:url(images/arrow_end.gif);
 }
 
 .members-title{

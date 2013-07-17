@@ -34,6 +34,7 @@
 	/**
 	 * TO-DO: integrate unit testing
 	 * TO-DO: implement @hide, @mixin, etc.
+	 * TO-DO: implement tags to include contents from external files (eventually markdown, etc.)
 	 */
 	 
 	util.extend(Documentor.PHGSourceProcessor.prototype, {
