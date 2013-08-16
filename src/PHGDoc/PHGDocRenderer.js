@@ -133,7 +133,7 @@
 			html+='</ul>';
 			return html;
 		}
-		$('body').append('<table width="100%"><tr><td id="apiTree" width="30%" valign="top">'+printNS(api.ns)+'</td><td id="selectionInfo" valign="top"></td></tr></table>');
+		$('body').append('<div id="selectionInfoWrap"><div id="selectionInfo"></div></div><div id="apiTreeWrap"><div id="apiTree">'+printNS(api.ns)+'</div></div>');
 		var storage={
 			hideInherited:false
 		};
@@ -370,6 +370,10 @@
 			}
 		}
 		$(window).bind( 'hashchange', renderObjectFromHash);
+		$(window).bind('resize', function (){
+			$('#selectionInfoWrap, #apiTreeWrap').height($(window).height()-10);
+		});
+		$(window).trigger('resize');
 		(function (){
 			// run through all classes and compile their "subclasses"
 			function processObj(obj){
