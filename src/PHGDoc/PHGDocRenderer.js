@@ -38,7 +38,7 @@
 		/**
 		 * @cfg {String}	resourceIncludes (optional)	The HTML to include JS and CSS resources. By default it refers to "resources/jquery-1.4.3.min.js" and "resources/PHGDoc.css".
 		 */
-		resourceIncludes:'<script type="text/javascript" src="resources/jquery-1.4.3.min.js"></script>' +
+		resourceIncludes:'<script type="text/javascript" src="resources/jquery-1.10.2.js"></script>' +
 						'<link rel="stylesheet" href="resources/PHGDoc.css" type="text/css">',
 		initialize:function (){
 			/**
@@ -67,7 +67,7 @@
 						}
 					});
 				}
-				['jquery-1.4.3.min.js', 'PHGDoc.css', 'images/expanded.png', 'images/collapsed.png', 'images/arrow.gif', 'images/arrow_end.gif'].forEach(copyResourceFileIf);
+				['jquery-1.10.2.js', 'PHGDoc.css', 'images/expanded.png', 'images/collapsed.png', 'images/arrow.gif', 'images/arrow_end.gif'].forEach(copyResourceFileIf);
 				var file=fs.createWriteStream(path.resolve(docPath, 'index.html'), { flags: 'w'});
 				file.on('error', function (err) {
 					console.log(err);
@@ -130,7 +130,7 @@
 				html+='</ul>';
 				return html;
 			}
-			$('body').append('<div id="selectionInfoWrap"><div id="selectionInfo"></div></div><div id="apiTreeWrap"><div id="apiTree">'+printNS(api.ns)+'</div></div>');
+			$(this.containerSelector||'body').append('<div id="selectionInfoWrap"><div id="selectionInfo"></div></div><div id="apiTreeWrap"><div id="apiTree">'+printNS(api.ns)+'</div></div>');
 			var storage={
 				hideInherited:false
 			};
@@ -175,7 +175,7 @@
 						html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
 				}
 				if('definedIn' in obj){
-					html+='<div class="defined-in"><em>defined in:</em> '+obj.definedIn.split('/').pop()+'</div>';
+					html+='<div class="defined-in"><em>defined in:</em> <span class="file-name" data-file-name="'+obj.definedIn+'">'+obj.definedIn.split('/').pop()+'</span></div>';
 				}
 				if(obj.description)
 					html+='<p>'+obj.description+'</p>';
@@ -346,31 +346,36 @@
 				
 				$('#selectionInfo').html(html);
 			}
+
+			/**
+			 * @cfg	{String/jQuery}	containerSelector	A container to limit the global listeners' scope. 
+			 */
+			var containerSelector=this.containerSelector||document;
 			if(!this.hasAttachedListeners){
-				$('.hide-inherited').live('click', function (){
+				$(containerSelector).on('click', '.hide-inherited', function (){
 					storage.hideInherited=this.checked;
 					renderObj(storage.obj);
 				});
-				$('.obj-link').live('click', function (){
+				$(containerSelector).on('click', '.obj-link', function (){
 					location.hash=$(this).attr('ns-path');
 		//				renderObj(api.getNSObject($(this).attr('ns-path')));
 				});
-				$('.member-expand').live('click', function (){
+				$(containerSelector).on('click', '.member-expand', function (){
 					$(this).parent().toggleClass('expanded');
 				});
 
 				$(window).bind( 'hashchange', renderObjectFromHash);
 				$(window).bind('resize', function (){
-					$('#selectionInfoWrap, #apiTreeWrap').height($(window).height()-10);
+					$('#selectionInfoWrap, #apiTreeWrap', containerSelector).height($(window).height()-10);
 				});
 				this.hasAttachedListeners=true;
 			}
 			
 			function renderObjectFromHash(){
-				$('.object-title.active').removeClass('active');
+				$('.object-title.active', containerSelector).removeClass('active');
 				var obj=api.getNSObject(location.hash.substring(1));
 				if(obj){
-					$('.object-title[ns-path='+obj.name+']').addClass('active');
+					$('.object-title[ns-path="'+obj.name+'"]', containerSelector).addClass('active');
 					renderObj(obj);
 				}
 			}
