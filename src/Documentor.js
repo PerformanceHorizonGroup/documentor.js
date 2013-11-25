@@ -34,26 +34,23 @@
 		 */
 		NSPathSeparator:'.',
 		initialize:function (){
-			var defNS={
-				name:'API',
-				type:'api',
-				children:{}
-			};
+			/**
+			 * @cfg	{Object}	ns
+			 * Namespace defaults.
+			 */
 			/**
 			 * @property	{Object}	ns
 			 * This object has the complete API description. It has very little upon creation but the SourceProcessor object's job is to fill it with details.
 			 */
-			if('ns' in this)
-				this.ns=util.extend(true, defNS, this.ns);
-			else
-				this.ns=defNS;
+			if('ns' in this){
+				this.nsDefaults=this.ns;
+				delete this.ns;
+			}
+			
+			this.reset();
 			/**
-			 * @cfg	{Documentor.SourceLoader}	sourceLoader
+			 * @cfg	{Documentor.SourceLoader}	sourceLoader	(required)
 			 * The loader to use.
-			 */
-			/**
-			 * @cfg	{Documentor.render.DocumentationRenderer}	renderer
-			 * If provided will call its render() method after the last source file is processed.
 			 */
 //			if(this.renderer)
 //				this.bind('sourceProcessed', function (){
@@ -66,9 +63,24 @@
 			 * The source processor to use. 
 			 */
 			
-			// process all files
+			/**
+			 * @cfg	{Array}	sourceFiles
+			 * If the list is provided it will be processed on initialization.
+			 */
 			if(this.sourceFiles)
 				this.processSourceFiles(this.sourceFiles);
+		},
+		/**
+		 * @method	reset
+		 * Reset the ns object to its initial state. This is useful before rebuilding it from new sources. 
+		 */
+		reset:function (){
+			var defNS={
+				name:'API',
+				type:'api',
+				children:{}
+			};
+			this.ns=util.extend(true, {}, defNS, this.nsDefaults);
 		},
 		/**
 		 * @method	processSourceFiles
@@ -78,14 +90,11 @@
 			var fileLoadedCb=function (fileData, fileURL){
 					this.sourceProcessor.process(fileData, this, fileURL);
 				}.scope(this);
-			for(var i=0; i<this.sourceFiles.length; i++){
-				this.sourceLoader.getSourceFile(this.sourceFiles[i], fileLoadedCb);
+			for(var i=0; i<sourceFiles.length; i++){
+				this.sourceLoader.getSourceFile(sourceFiles[i], fileLoadedCb);
 			}
 		},
 		sourceFileEnd:function (fileURL){
-			var ind=util.inArray(fileURL, this.sourceFiles);
-			if(ind>-1)
-				this.sourceFiles.splice(ind, 1);
 	        /**
 	         * @event sourceProcessed
 	         * Fires when a source file has been processed.
@@ -93,8 +102,21 @@
 	         * @param {String}	fileURL
 	         */
 			this.emit('sourceProcessed', this, fileURL);
-			if(this.sourceFiles.length==0 && this.renderer)
-				this.renderer.render(this);
+			if(this.sourceLoader.queue.length==0){
+		        /**
+		         * @event sourceQueueEmpty
+		         * Fires when the source files queue of the loader is emptied - all given source files are loaded.
+		         * @param {Documentor.Api} this
+		         */
+				this.emit('sourceQueueEmpty', this);
+				
+				/**
+				 * @cfg	{Documentor.render.DocumentationRenderer}	renderer
+				 * If provided will call its render() method after the last source file is processed.
+				 */
+				if(this.renderer)
+					this.renderer.render(this);
+			}
 		},
 		/**
 		 * @method	getNSObject

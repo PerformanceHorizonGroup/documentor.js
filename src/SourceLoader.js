@@ -19,7 +19,12 @@
 		this.initialize();
 	};
 	util.extend(Documentor.SourceLoader.prototype, {
-		initialize:util.noop
+		initialize:function (){
+			/**
+			 * @property	{Array} queue	A list of source files queued for loading.
+			 */
+			this.queue=[];
+		},
 		/**
 		 * @method	getSourceFile
 		 * Returns file contents asynchronously if a callback is specified and may return immediately if there is no callback and the content can be retrieved synchronously.
@@ -43,14 +48,19 @@
 //		initialize:function (){
 //		},
 		getSourceFile:function (fileURL, cb){
-			if(cb)
+			if(cb){
+				this.queue.push(fileURL);
 				jQuery.ajax({
 					url:fileURL,
 					dataType:'text',
 					success:function (data, textStatus, jqXHR){
+						var queueInd=util.inArray(fileURL, this.queue);
+						if(queueInd>-1)
+							this.queue.splice(queueInd, 1);
 						cb(data, fileURL);
-					}
+					}.scope(this)
 				});
+			}
 			return null;
 		}
 	});
@@ -108,11 +118,15 @@
 		getSourceFile:function (fileName, cb){
 			var fs=require('fs'),
 				fn=require('path').resolve(fileName);
-			if(cb)
+			if(cb){
+				this.queue.push(fileName);
 				fs.readFile(fn, 'utf8', function (err, data){
+					var queueInd=util.inArray(fileName, this.queue);
+					if(queueInd>-1)
+						this.queue.splice(queueInd, 1);
 					cb(err?null:data, fileName);
-				});
-			else
+				}.scope(this));
+			}else
 				return fs.readFileSync(fn, 'utf8');
 		}
 	});
