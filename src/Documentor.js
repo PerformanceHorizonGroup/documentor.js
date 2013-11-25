@@ -67,13 +67,19 @@
 			 */
 			
 			// process all files
+			if(this.sourceFiles)
+				this.processSourceFiles(this.sourceFiles);
+		},
+		/**
+		 * @method	processSourceFiles
+		 * @param	{Array}	sourceFiles	A list of file to process.
+		 */
+		processSourceFiles:function (sourceFiles){
 			var fileLoadedCb=function (fileData, fileURL){
 					this.sourceProcessor.process(fileData, this, fileURL);
 				}.scope(this);
 			for(var i=0; i<this.sourceFiles.length; i++){
-				var d=this.sourceLoader.getSourceFile(this.sourceFiles[i], fileLoadedCb);
-//				if(d) // if the loader returned contents synchronously
-//					fileLoadedCb(d, this.sourceFiles[i]);
+				this.sourceLoader.getSourceFile(this.sourceFiles[i], fileLoadedCb);
 			}
 		},
 		sourceFileEnd:function (fileURL){

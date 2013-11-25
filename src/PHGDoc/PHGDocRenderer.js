@@ -44,8 +44,6 @@
 			/**
 			 * @cfg {Function} renderFn	(optional)	The rendering function which will print the api tree and details.
 			 */
-			if(!this.renderFn)
-				this.renderFn=renderFn;
 			if(this.api)
 				this.render(this.api);
 		},
@@ -74,326 +72,330 @@
 				file.on('error', function (err) {
 					console.log(err);
 				});
-				file.write('<!DOCTYPE html>' +
-						'<html>' +
-						'<head>' +
-						'<title>'+api.ns.name+'</title>' +
-						this.resourceIncludes +
-						'<meta charset="utf-8">' +
-						'<script type="text/javascript">(function (){');
-				file.write(this.renderFn.toString());
-				file.write('var api='+JSON.stringify({ns:api.ns})+';');
-				file.write('api.NSPathSeparator=\''+api.NSPathSeparator+'\';');
-				file.write('api.getNSObject='+api.getNSObject.toString()+';');
-				file.write('$(document).ready(function (){ '+this.renderFn.name+'(api); });');
-				file.write('}());</script>' +
-						'</head>' +
-						'<body>' +
-						'</body>' +
-						'</html>');
+				file.write(['<!DOCTYPE html>',
+						'<html>',
+						'<head>',
+						'<title>'+api.ns.name+'</title>',
+						this.resourceIncludes,
+						'<meta charset="utf-8">',
+						'<script type="text/javascript">(function (){',
+						'var renderFn='+this.renderFn.toString()+';',
+						'var api='+JSON.stringify({ns:api.ns})+';',
+						'api.NSPathSeparator=\''+api.NSPathSeparator+'\';',
+						'api.getNSObject='+api.getNSObject.toString()+';',
+						'$(document).ready(function (){ renderFn(api); });',
+						'}());</script>',
+						'</head>',
+						'<body>',
+						'</body>',
+						'</html>'].join('\n'));
 								
 			}else
 				this.renderFn(api);
-		}
-	});
-	function renderFn(api){
-		function printNS(obj){ // print menu items
-			var html='<ul>',
-				titleStr='';
-			if(obj.type=='api')
-				titleStr=obj.name.split(api.NSPathSeparator).pop();
-			else if(obj.type=='namespace')
-				titleStr='<em>namespace</em> '+obj.name.split(api.NSPathSeparator).pop();
-			else if(obj.type=='module')
-				titleStr='<em>module</em> '+obj.name.split(api.NSPathSeparator).pop();
-			else{
-				titleStr='<span>'+obj.name.split(api.NSPathSeparator).pop();
-				if(obj.flags && !$.isEmptyObject(obj.flags)){
+		},
+		renderFn:function (api){
+			function printNS(obj){ // print menu items
+				var html='<ul>',
+					titleStr='';
+				if(obj.type=='api')
+					titleStr=obj.name.split(api.NSPathSeparator).pop();
+				else if(obj.type=='namespace')
+					titleStr='<em>namespace</em> '+obj.name.split(api.NSPathSeparator).pop();
+				else if(obj.type=='module')
+					titleStr='<em>module</em> '+obj.name.split(api.NSPathSeparator).pop();
+				else{
+					titleStr='<span>'+obj.name.split(api.NSPathSeparator).pop();
+					if(obj.flags && !$.isEmptyObject(obj.flags)){
+						var flags=[];
+						for(var f in obj.flags)
+							if(obj.flags[f])
+								flags.push(f.charAt(0));
+						if(flags.length)
+							titleStr+=' <span class="object-attributes">('+flags.join()+')</span>';
+					}
+					titleStr+='</span>';
+				}
+				html+='<li class="object-title obj-link" ns-path="'+obj.name+'">'+titleStr+'</li>';
+				
+				var children=[];
+				for(var c in obj.children)
+					children.push(obj.children[c]);
+				children.sort(function (a, b){
+					return (a.name<b.name?-1:(a.name>b.name?1:0));
+				});
+				for(var i=0; i<children.length; ++i){
+					html+='<li class="children-list">'+printNS(children[i])+'</li>';
+				}
+				
+				html+='</ul>';
+				return html;
+			}
+			$('body').append('<div id="selectionInfoWrap"><div id="selectionInfo"></div></div><div id="apiTreeWrap"><div id="apiTree">'+printNS(api.ns)+'</div></div>');
+			var storage={
+				hideInherited:false
+			};
+			function renderObj(obj){
+				storage.obj=obj;
+				var hierarchy=[[obj.name, obj]],
+					html='',
+					list;
+				if('extends' in obj){
+					var parentClass=obj['extends'],
+						parentClassObj=api.getNSObject(parentClass);
+					do{
+						var hObj=[parentClass, null];
+						hierarchy.unshift(hObj);
+						if(parentClassObj){
+							hObj[1]=parentClassObj;
+							if('extends' in parentClassObj){
+								parentClass=parentClassObj['extends'];
+								parentClassObj=api.getNSObject(parentClass);
+							}else
+								parentClass=null;
+						}else
+							parentClass=null;
+					}while(parentClass);
+					var cls=hierarchy[0];
+					html+='<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title'+(cls[1]?(' obj-link" ns-path="'+cls[0]+'"'):'"')+'>'+cls[0]+'</div>';
+					var ending='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title">'+hierarchy[hierarchy.length-1][0]+'</div></div>' +
+							'</div></div>';
+					for(var i=1; i<hierarchy.length-1; i++){
+						html+='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title'+(hierarchy[i][1]?(' obj-link" ns-path="'+hierarchy[i][0]+'"'):'"')+'>'+hierarchy[i][0]+'</div>';
+						ending+='</div>';
+					}
+					html+=ending;
+				}
+				html+='<div><em>'+(obj.type!='api'?obj.type:'')+'</em> <strong>'+obj.name+'</strong>';
+				if(!$.isEmptyObject(obj.flags)){
 					var flags=[];
 					for(var f in obj.flags)
 						if(obj.flags[f])
-							flags.push(f.charAt(0));
+							flags.push(f);
 					if(flags.length)
-						titleStr+=' <span class="object-attributes">('+flags.join()+')</span>';
+						html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
 				}
-				titleStr+='</span>';
-			}
-			html+='<li class="object-title obj-link" ns-path="'+obj.name+'">'+titleStr+'</li>';
-			
-			var children=[];
-			for(var c in obj.children)
-				children.push(obj.children[c]);
-			children.sort(function (a, b){
-				return (a.name<b.name?-1:(a.name>b.name?1:0));
-			});
-			for(var i=0; i<children.length; ++i){
-				html+='<li class="children-list">'+printNS(children[i])+'</li>';
-			}
-			
-			html+='</ul>';
-			return html;
-		}
-		$('body').append('<div id="selectionInfoWrap"><div id="selectionInfo"></div></div><div id="apiTreeWrap"><div id="apiTree">'+printNS(api.ns)+'</div></div>');
-		var storage={
-			hideInherited:false
-		};
-		$('.hide-inherited').live('click', function (){
-			storage.hideInherited=this.checked;
-			renderObj(storage.obj);
-		});
-		function renderObj(obj){
-			storage.obj=obj;
-			var hierarchy=[[obj.name, obj]],
-				html='',
-				list;
-			if('extends' in obj){
-				var parentClass=obj['extends'],
-					parentClassObj=api.getNSObject(parentClass);
-				do{
-					var hObj=[parentClass, null];
-					hierarchy.unshift(hObj);
-					if(parentClassObj){
-						hObj[1]=parentClassObj;
-						if('extends' in parentClassObj){
-							parentClass=parentClassObj['extends'];
-							parentClassObj=api.getNSObject(parentClass);
-						}else
-							parentClass=null;
-					}else
-						parentClass=null;
-				}while(parentClass);
-				var cls=hierarchy[0];
-				html+='<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title'+(cls[1]?(' obj-link" ns-path="'+cls[0]+'"'):'"')+'>'+cls[0]+'</div>';
-				var ending='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title">'+hierarchy[hierarchy.length-1][0]+'</div></div>' +
-						'</div></div>';
-				for(var i=1; i<hierarchy.length-1; i++){
-					html+='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title'+(hierarchy[i][1]?(' obj-link" ns-path="'+hierarchy[i][0]+'"'):'"')+'>'+hierarchy[i][0]+'</div>';
-					ending+='</div>';
+				if('definedIn' in obj){
+					html+='<div class="defined-in"><em>defined in:</em> '+obj.definedIn.split('/').pop()+'</div>';
 				}
-				html+=ending;
-			}
-			html+='<div><em>'+(obj.type!='api'?obj.type:'')+'</em> <strong>'+obj.name+'</strong>';
-			if(!$.isEmptyObject(obj.flags)){
-				var flags=[];
-				for(var f in obj.flags)
-					if(obj.flags[f])
-						flags.push(f);
-				if(flags.length)
-					html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
-			}
-			if('definedIn' in obj)
-				html+='<div><em>defined in:</em> '+obj.definedIn.split('/').pop()+'</div>';
-			if(obj.description)
-				html+='<p>'+obj.description+'</p>';
-			if('subclasses' in obj){
-				list=[];
-				for(var i=0; i<obj.subclasses.length; i++)
-					list.push('<span class="obj-link" ns-path="'+obj.subclasses[i].name+'">'+obj.subclasses[i].name+'</span>');
-				html+='<p><em>subclasses:</em> '+list.join(', ')+'</p>';
-			}				
-			html+='</div>';
-			html+='<div class="clear">';
-			if(obj.type=='class')
-				html+='<input type="checkbox"'+(storage.hideInherited?' checked':'')+' class="hide-inherited"> hide inherited';
-			html+='</div>';
-			
-			/**
-			 * TO-DO: add a check to each member block to determine if it needs to be expandable
-			 */
-			function getMembersList(type){
-				var members={}, list=[];
-				// put members from all parents in the hash
-				for(var i=storage.hideInherited?(hierarchy.length-1):0; i<hierarchy.length; ++i)
-					if(hierarchy[i][1]) // if this class is in the API
-						for(var m in hierarchy[i][1][type])
-							if(!(m in members)) // skip overriden members
-								members[m]=$.extend({definingClass:hierarchy[i][1].name}, hierarchy[i][1][type][m]);
-				// move the members to a list
-				for(var m in members)
-					list.push(members[m]);
-				// sort the list ASC by member name
-				list.sort(function (a, b){
-					return a.name<b.name?-1:(a.name>b.name?1:0);
-				});
-				return list;
-			}
-			// config
-			if('config' in obj){
-				list=getMembersList('config');
-				if(list.length){
-					html+='<div class="members">' +
-							'<div class="members-head"><em class="members-title">configuration options:</em><div class="defined-by">defined by</div></div>';
-					for(var i=0; i<list.length; ++i){
-						html+='<div class="member">' +
+				if(obj.description)
+					html+='<p>'+obj.description+'</p>';
+				if('subclasses' in obj){
+					list=[];
+					for(var i=0; i<obj.subclasses.length; i++)
+						list.push('<span class="obj-link" ns-path="'+obj.subclasses[i].name+'">'+obj.subclasses[i].name+'</span>');
+					html+='<p><em>subclasses:</em> '+list.join(', ')+'</p>';
+				}				
+				html+='</div>';
+				html+='<div class="clear">';
+				if(obj.type=='class')
+					html+='<input type="checkbox"'+(storage.hideInherited?' checked':'')+' class="hide-inherited"> hide inherited';
+				html+='</div>';
+				
+				/**
+				 */
+				function getMembersList(type){
+					var members={}, list=[];
+					// put members from all parents in the hash
+					for(var i=storage.hideInherited?(hierarchy.length-1):0; i<hierarchy.length; ++i)
+						if(hierarchy[i][1]) // if this class is in the API
+							for(var m in hierarchy[i][1][type])
+								if(!(m in members)) // skip overriden members
+									members[m]=$.extend({definingClass:hierarchy[i][1].name}, hierarchy[i][1][type][m]);
+					// move the members to a list
+					for(var m in members)
+						list.push(members[m]);
+					// sort the list ASC by member name
+					list.sort(function (a, b){
+						return a.name<b.name?-1:(a.name>b.name?1:0);
+					});
+					return list;
+				}
+				// config
+				if('config' in obj){
+					list=getMembersList('config');
+					if(list.length){
+						html+='<div class="members">' +
+								'<div class="members-head"><em class="members-title">configuration options:</em><div class="defined-by">defined by</div></div>';
+						for(var i=0; i<list.length; ++i){
+							html+='<div class="member">' +
+										'<div class="member-expand">&nbsp;</div>' +
+										'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+										'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
+										'<div class="member-summary">';
+							var summary=list[i].summary||list[i].description;
+							if(summary)
+								html+=summary.substring(0, 100);
+							if(summary.length>100)
+								html+='...';
+							html+='</div>' +
+	//										'<div class="member-summary">'+(list[i].summary||list[i].description).substring(0, 100)+'...</div>' +
+										'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
+									'</div>';
+						}
+						html+='</div>';
+					}
+				}
+				// properties
+				if('properties' in obj){
+					list=getMembersList('properties');
+					if(list.length){
+						html+='<div class="members">' +
+								'<div class="members-head"><em class="members-title">properties:</em><div class="defined-by">defined by</div></div>';
+						for(var i=0; i<list.length; ++i){
+							html+='<div class="member">' +
+										'<div class="member-expand">&nbsp;</div>' +
+										'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+										'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
+										'<div class="member-summary">';
+							var summary=list[i].summary||list[i].description;
+							if(summary)
+								html+=summary.substring(0, 100);
+							if(summary.length>100)
+								html+='...';
+							html+='</div>' +
+										'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
+									'</div>';
+						}
+						html+='</div>';
+					}
+				}
+				// methods
+				if('methods' in obj){
+					list=getMembersList('methods');
+					if(list.length){
+						html+='<div class="members"><div class="members-head"><em class="members-title">methods:</em><div class="defined-by">defined by</div></div>';
+						for(var i=0; i<list.length; ++i){
+							html+='<div class="member">' +
 									'<div class="member-expand">&nbsp;</div>' +
 									'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
-									'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
-									'<div class="member-summary">';
-						var summary=list[i].summary||list[i].description;
-						if(summary)
-							html+=summary.substring(0, 100);
-						if(summary.length>100)
-							html+='...';
-						html+='</div>' +
-//										'<div class="member-summary">'+(list[i].summary||list[i].description).substring(0, 100)+'...</div>' +
-									'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
-								'</div>';
-					}
-					html+='</div>';
-				}
-			}
-			// properties
-			if('properties' in obj){
-				list=getMembersList('properties');
-				if(list.length){
-					html+='<div class="members">' +
-							'<div class="members-head"><em class="members-title">properties:</em><div class="defined-by">defined by</div></div>';
-					for(var i=0; i<list.length; ++i){
-						html+='<div class="member">' +
-									'<div class="member-expand">&nbsp;</div>' +
-									'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
-									'<div class="member-title"><strong>'+list[i].name+'</strong> : '+list[i].dataType+'</div>' +
-									'<div class="member-summary">';
-						var summary=list[i].summary||list[i].description;
-						if(summary)
-							html+=summary.substring(0, 100);
-						if(summary.length>100)
-							html+='...';
-						html+='</div>' +
-									'<div class="member-description">'+(list[i].description||list[i].summary)+'</div>' +
-								'</div>';
-					}
-					html+='</div>';
-				}
-			}
-			// methods
-			if('methods' in obj){
-				list=getMembersList('methods');
-				if(list.length){
-					html+='<div class="members"><div class="members-head"><em class="members-title">methods:</em><div class="defined-by">defined by</div></div>';
-					for(var i=0; i<list.length; ++i){
-						html+='<div class="member">' +
-								'<div class="member-expand">&nbsp;</div>' +
-								'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
-								'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
-						var paramsList=[];
-						for(var p=0; p<list[i].params.length; ++p){
-							var paramStr=list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>';
-							if(list[i].params[p].optional)
-								paramStr='['+paramStr+']';
-							paramsList.push(paramStr);
-						}
-						html+=paramsList.join(', ');
-						html+=' ) : '+(list[i].returns.type||'void');
-						if(!$.isEmptyObject(list[i].flags)){
-							var flags=[];
-							for(var f in list[i].flags)
-								if(list[i].flags[f])
-									flags.push(f);
-							if(flags.length){
-								html+=' [';
-								for(var f=0; f<flags.length; ++f)
-									html+='<span class="method-flag">'+flags[f]+'</span>';
-								html+=']';
-							}
-						}
-						html+='</div>' +
-								'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>'+
-								'<div class="member-description"><div>'+(list[i].description||list[i].summary)+'</div>';
-						// add Parameters and Returns (if any) to member-description 
-						if(paramsList.length){
-							html+='Parameters:<ul>';
+									'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
+							var paramsList=[];
 							for(var p=0; p<list[i].params.length; ++p){
-								html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>';
+								var paramStr=list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>';
 								if(list[i].params[p].optional)
-									html+='(optional) ';
-								html+=(list[i].params[p].description)+'</div></li>'; // ||list[i].params[p].summary
+									paramStr='['+paramStr+']';
+								paramsList.push(paramStr);
 							}
-							html+='</ul>';
+							html+=paramsList.join(', ');
+							html+=' ) : '+(list[i].returns.type||'void');
+							if(!$.isEmptyObject(list[i].flags)){
+								var flags=[];
+								for(var f in list[i].flags)
+									if(list[i].flags[f])
+										flags.push(f);
+								if(flags.length){
+									html+=' [';
+									for(var f=0; f<flags.length; ++f)
+										html+='<span class="method-flag">'+flags[f]+'</span>';
+									html+=']';
+								}
+							}
+							html+='</div>' +
+									'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>'+
+									'<div class="member-description"><div>'+(list[i].description||list[i].summary)+'</div>';
+							// add Parameters and Returns (if any) to member-description 
+							if(paramsList.length){
+								html+='Parameters:<ul>';
+								for(var p=0; p<list[i].params.length; ++p){
+									html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>';
+									if(list[i].params[p].optional)
+										html+='(optional) ';
+									html+=(list[i].params[p].description)+'</div></li>'; // ||list[i].params[p].summary
+								}
+								html+='</ul>';
+							}
+							if(list[i].returns.type!='void'){
+								html+='Returns:<ul>';
+								html+='<li><span class="pre">'+list[i].returns.type+'</span><div>'+list[i].returns.summary+'</div></li>';
+								html+='</ul>';
+							}
+							html+='</div></div>';
 						}
-						if(list[i].returns.type!='void'){
-							html+='Returns:<ul>';
-							html+='<li><span class="pre">'+list[i].returns.type+'</span><div>'+list[i].returns.summary+'</div></li>';
-							html+='</ul>';
-						}
-						html+='</div></div>';
+						html+='</div>';
 					}
-					html+='</div>';
 				}
-			}
-			// events
-			if('events' in obj){
-				list=getMembersList('events');
-				if(list.length){
-					html+='<div class="members"><div class="members-head"><em class="members-title">events:</em><div class="defined-by">defined by</div></div>';
-					for(var i=0; i<list.length; ++i){
-						html+='<div class="member">' +
-								'<div class="member-expand">&nbsp;</div>' +
-								'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
-								'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
-						var paramsString=[];
-						for(var p=0; p<list[i].params.length; ++p)
-							paramsString.push(list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>');
-						html+=paramsString.join(', ');
-						html+=' )</div>' +
-								'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>' +
-								'<div class="member-description"><div>'+(list[i].description || list[i].summary)+'</div>';
-						// add Parameters (if any) to member-description 
-						if(paramsString.length){
-							html+='Parameters:<ul>';
+				// events
+				if('events' in obj){
+					list=getMembersList('events');
+					if(list.length){
+						html+='<div class="members"><div class="members-head"><em class="members-title">events:</em><div class="defined-by">defined by</div></div>';
+						for(var i=0; i<list.length; ++i){
+							html+='<div class="member">' +
+									'<div class="member-expand">&nbsp;</div>' +
+									'<div class="member-meta"><div class="defining-class obj-link" ns-path="'+list[i].definingClass+'">'+list[i].definingClass+'</div></div>' +
+									'<div class="member-title"><strong>'+list[i].name+'</strong>( ';
+							var paramsString=[];
 							for(var p=0; p<list[i].params.length; ++p)
-								html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>'+(list[i].params[p].description)+'</div></li>';
-							html+='</ul>';
+								paramsString.push(list[i].params[p].dataType+' <span class="pre">'+list[i].params[p].name+'</span>');
+							html+=paramsString.join(', ');
+							html+=' )</div>' +
+									'<div class="member-summary">'+(list[i].summary || list[i].description)+'</div>' +
+									'<div class="member-description"><div>'+(list[i].description || list[i].summary)+'</div>';
+							// add Parameters (if any) to member-description 
+							if(paramsString.length){
+								html+='Parameters:<ul>';
+								for(var p=0; p<list[i].params.length; ++p)
+									html+='<li><span class="pre">'+list[i].params[p].name+'</span> : '+list[i].params[p].dataType+'<div>'+(list[i].params[p].description)+'</div></li>';
+								html+='</ul>';
+							}
+							html+='</div></div>';
 						}
-						html+='</div></div>';
-					}
-					html+='</div>';
-				}
-			}
-			
-			$('#selectionInfo').html(html);
-		}
-		$('.obj-link').live('click', function (){
-			location.hash=$(this).attr('ns-path');
-//				renderObj(api.getNSObject($(this).attr('ns-path')));
-		});
-		$('.member-expand').live('click', function (){
-			$(this).parent().toggleClass('expanded');
-		});
-		
-		function renderObjectFromHash(){
-			$('.object-title.active').removeClass('active');
-			var obj=api.getNSObject(location.hash.substring(1));
-			if(obj){
-				$('.object-title[ns-path='+obj.name+']').addClass('active');
-				renderObj(obj);
-			}
-		}
-		$(window).bind( 'hashchange', renderObjectFromHash);
-		$(window).bind('resize', function (){
-			$('#selectionInfoWrap, #apiTreeWrap').height($(window).height()-10);
-		});
-		$(window).trigger('resize');
-		(function (){
-			// run through all classes and compile their "subclasses"
-			function processObj(obj){
-				if(obj.type=='class' && obj['extends']){
-					var extObj=api.getNSObject(obj['extends']);
-					if(extObj){
-						if(!extObj.subclasses)
-							extObj.subclasses=[];
-						extObj.subclasses.push(obj);
+						html+='</div>';
 					}
 				}
-				if(obj.children)
-					for(var c in obj.children)
-						processObj(obj.children[c]);
+				
+				$('#selectionInfo').html(html);
 			}
-			processObj(api.ns);
-		}());
+			if(!this.hasAttachedListeners){
+				$('.hide-inherited').live('click', function (){
+					storage.hideInherited=this.checked;
+					renderObj(storage.obj);
+				});
+				$('.obj-link').live('click', function (){
+					location.hash=$(this).attr('ns-path');
+		//				renderObj(api.getNSObject($(this).attr('ns-path')));
+				});
+				$('.member-expand').live('click', function (){
+					$(this).parent().toggleClass('expanded');
+				});
+
+				$(window).bind( 'hashchange', renderObjectFromHash);
+				$(window).bind('resize', function (){
+					$('#selectionInfoWrap, #apiTreeWrap').height($(window).height()-10);
+				});
+				this.hasAttachedListeners=true;
+			}
 			
-		if(location.hash!='')
-			renderObjectFromHash();
-	}
+			function renderObjectFromHash(){
+				$('.object-title.active').removeClass('active');
+				var obj=api.getNSObject(location.hash.substring(1));
+				if(obj){
+					$('.object-title[ns-path='+obj.name+']').addClass('active');
+					renderObj(obj);
+				}
+			}
+			$(window).trigger('resize');
+			(function (){
+				// run through all classes and compile their "subclasses"
+				function processObj(obj){
+					if(obj.type=='class' && obj['extends']){
+						var extObj=api.getNSObject(obj['extends']);
+						if(extObj){
+							if(!extObj.subclasses)
+								extObj.subclasses=[];
+							extObj.subclasses.push(obj);
+						}
+					}
+					if(obj.children)
+						for(var c in obj.children)
+							processObj(obj.children[c]);
+				}
+				processObj(api.ns);
+			}());
+				
+			if(location.hash!='')
+				renderObjectFromHash();
+		}
+	});
 	
 }());
