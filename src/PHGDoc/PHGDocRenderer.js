@@ -92,8 +92,10 @@
 								
 			}else
 				this.renderFn(api);
+			ns.PHGDocRenderer.super_.prototype.render.apply(this, arguments);
 		},
 		renderFn:function (api){
+			var renderer=this;
 			function printNS(obj){ // print menu items
 				var html='<ul>',
 					titleStr='';
@@ -345,6 +347,14 @@
 				}
 				
 				$('#selectionInfo').html(html);
+				
+			    /**
+			     * @event renderSelectedItemInfo
+			     * Fires when the details of the selected item are rendered in the selectionInfo pane.
+			     * @param {Documentor.Api} this
+			     * @param {Object} item	The rendered item's data.
+			     */
+				renderer.emit('renderSelectedItemInfo', this, obj);
 			}
 
 			/**
