@@ -1,13 +1,13 @@
 {
 	"name":"documentor.js",
-	"version":"0.2.2",
+	"version":"0.2.4",
 	"author":"PHG <techies@performancehorizon.com>",
 	"description":"Documentation generation tool",
 	"contributors":[{
 		"name":"Georgi Kostov",
 		"email":"georgi.kostov@performancehorizon.com"
 	}],
-	"main":"./src/Documentor.js",
+	"main":"index",
 	"repository":{
 		"type":"git",
 		"url":"https://github.com/PerformanceHorizonGroup/documentor.js.git"
@@ -20,8 +20,14 @@
 	"dependencies":{
 		
 	},
+	"devDependencies":{
+		"yuicompressor": "*"
+	},
 	"license":"MIT",
 	"engine":{
 		"node":">=0.4.1"
+	},
+	"scripts":{
+		"prepublish":"node build/build.js"
 	}
 }
