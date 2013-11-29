@@ -88,7 +88,10 @@
 		 */
 		processSourceFiles:function (sourceFiles){
 			var fileLoadedCb=function (fileData, fileURL){
-					this.sourceProcessor.process(fileData, this, fileURL);
+					if(!fileData)
+						console.error('Could not load "'+fileURL+'"');
+					else
+						this.sourceProcessor.process(fileData, this, fileURL);
 				}.scope(this);
 			for(var i=0; i<sourceFiles.length; i++){
 				this.sourceLoader.getSourceFile(sourceFiles[i], fileLoadedCb);
