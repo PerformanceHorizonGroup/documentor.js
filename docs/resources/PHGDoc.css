@@ -36,10 +36,6 @@ body{
 #selectionInfo{
 	padding:10px;
 }
-#includeAppFiles{
-	display:none;
-	font-size:smaller;
-}
 li.object-title{
 	list-style-type:none;
 }

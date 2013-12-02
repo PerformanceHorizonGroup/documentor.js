@@ -1,3 +1,429 @@
+/*!
+	 * PHGDoc.js
+	 * Copyright(c) 2012-2013 Georgi Kostov <p_e_a@gbg.bg>, http://performancehorizon.com
+	 * https://github.com/PerformanceHorizonGroup/documentor.js
+	 * MIT Licensed
+	 */
+	(function (){
+
+	Function.prototype.scope=function (scopeObj){
+		var f=this;	
+		return function (){
+			return f.apply(scopeObj, arguments);
+		};
+	};
+	Function.prototype.createCallback=function (scopeObj, params, appendArgs){
+		var f=this;	
+		return function (){
+			var args=params||arguments;
+			if(appendArgs === true)
+				args=[].slice.call(arguments, 0).concat(args);
+			return f.apply(scopeObj||this, args);
+		};
+	};
+
+	var ns = (typeof module == 'object' && module.exports) || (window.util = {});
+	
+	if(typeof module == 'object' && module.exports){
+		ns.extend=require('../lib/other/jquery.extend');
+//		ns.isArray = Array.isArray || require('util').isArray;
+		ns.noop=function (){};
+		ns.inherits=require('util').inherits;
+		
+		// copied from jQuery source
+		ns.inArray = function( elem, array, i ) {
+			var len;
+	
+			if ( array ) {
+				if ( Array.prototype.indexOf ) {
+					return Array.prototype.indexOf.call( array, elem, i );
+				}
+	
+				len = array.length;
+				i = i ? i < 0 ? Math.max( 0, len + i ) : i : 0;
+	
+				for ( ; i < len; i++ ) {
+					// Skip accessing in sparse arrays
+					if ( i in array && array[ i ] === elem ) {
+						return i;
+					}
+				}
+			}
+	
+			return -1;
+		};
+	}else{
+		ns.extend=$.extend;
+		ns.noop=$.noop;
+		ns.inArray=$.inArray;
+		
+		// copied from node.js source
+		ns.inherits=function (ctor, superCtor){
+		    ctor.super_ = superCtor;
+		    ctor.prototype = Object.create(superCtor.prototype, {
+		        constructor: {
+		            value: ctor,
+		            enumerable: false
+		        }
+		    });
+		};
+		
+	}
+
+	/**
+	 * Ensure namspace exists
+	 * @param	{String}	namespace
+	 * @param	{Object}	rootNS	(optional)	This is optional only in the browser and defaults to window .
+	 * @return	{Object}	NS	The namespace object or null if invalid rootNS was given and the NS could not be found/created
+	 */
+	ns.ns=function (namespace, rootNS){
+		if(typeof namespace == 'string')
+			namespace=namespace.split('.');
+		if(!rootNS){ // optional only in the browser!!! in node.js rootNS *must* be specified
+			if(arguments.length<2){ // if no root NS was specified
+				rootNS=window[namespace[0]];
+				if(rootNS)
+					namespace.shift();
+				else
+					rootNS=window;
+			}else
+				return null;
+		}
+		var res=ns.getPropValue(rootNS, namespace);
+		if(!res){
+			res={};
+			ns.setPropValue(rootNS, namespace, res);
+		}
+		return res;
+	};
+	/**
+	 * If the property does not exist it is assigned defaultVal if that is specified else - undefined. 
+	 * @param	{Object}	obj
+	 * @param	{Array/String}	prop An array with the property path or a dot-delimited String giving the path 
+	 * @param	{Mixed}	defaultVal	(optional) The value to return if the property does not exist.
+	 * @param	{Array}	alternateProp	(optional)	An optional property to return. If that property does not exist too defaultVal will be returned (so it must be passed too)
+	 * @return	{Mixed}	res
+	 */
+	ns.getPropValue=function (obj, prop, defaultVal, alternateProp){
+		var res=obj;
+		if(typeof prop == 'string')
+			prop=prop.split('.');
+		else
+			prop=prop.slice(0);
+		while(prop.length){
+			var p=prop.shift();
+			if(!(p in res)){
+				if(arguments.length>3) // if a alternateProp is given
+					return ns.getPropValue(obj, alternateProp, defaultVal);
+				else if(arguments.length>2) // if a defaultVal is given
+					res[p] = defaultVal;
+				else
+					return undefined;
+			}
+			res=res[p];
+		}
+		return res;
+	};
+	/**
+	 * @param	{Object}	obj
+	 * @param	{Array/String}	prop An array with the property path or a dot-delimited String giving the path 
+	 * @param	{Mixed}	val	The value to set.
+	 */
+	ns.setPropValue=function (obj, prop, val){
+		if(typeof prop == 'string')
+			prop=prop.split('.');
+		else
+			prop=prop.slice(0);
+		if(prop.length>1){
+			var p=prop.pop();
+			obj=ns.getPropValue(obj, prop, {});
+			prop=[p];
+		}
+		obj[prop[0]]=val;
+	};
+	
+}());// if registerModule is defined then we must be in the browser so call that. if not then this has
+// been loaded as a node.js module and the code can execute right away.
+(typeof registerModule=='function' ? registerModule : function (fn, module){fn(module);}).call(this, function (module){
+	var exports=module.exports,
+		require=module.require;
+		
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+var isArray = Array.isArray;
+
+function EventEmitter(cfg){
+	if(cfg && typeof cfg=='object'){
+		if('listeners' in cfg){
+			for(var l in cfg.listeners)
+				this.on(l, cfg.listeners[l]);
+			delete cfg.listeners;
+		}
+		for(var p in cfg)
+			this[p]=cfg[p];
+	}
+}
+exports.EventEmitter = EventEmitter;
+
+// By default EventEmitters will print a warning if more than
+// 10 listeners are added to it. This is a useful default which
+// helps finding memory leaks.
+//
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+var defaultMaxListeners = 10;
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!this._events) this._events = {};
+  this._maxListeners = n;
+};
+
+
+EventEmitter.prototype.emit = function() {
+  var type = arguments[0];
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events || !this._events.error ||
+        (isArray(this._events.error) && !this._events.error.length))
+    {
+      if (arguments[1] instanceof Error) {
+        throw arguments[1]; // Unhandled 'error' event
+      } else {
+        throw new Error("Uncaught, unspecified 'error' event.");
+      }
+      return false;
+    }
+  }
+
+  if (!this._events) return false;
+  var handler = this._events[type];
+  if (!handler) return false;
+
+  if (typeof handler == 'function') {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        var l = arguments.length;
+        var args = new Array(l - 1);
+        for (var i = 1; i < l; i++) args[i - 1] = arguments[i];
+        handler.apply(this, args);
+    }
+    return true;
+
+  } else if (isArray(handler)) {
+    var l = arguments.length;
+    var args = new Array(l - 1);
+    for (var i = 1; i < l; i++) args[i - 1] = arguments[i];
+
+    var listeners = handler.slice();
+    for (var i = 0, l = listeners.length; i < l; i++) {
+      listeners[i].apply(this, args);
+    }
+    return true;
+
+  } else {
+    return false;
+  }
+};
+
+// EventEmitter is defined in src/node_events.cc
+// EventEmitter.prototype.emit() is also defined there.
+EventEmitter.prototype.addListener = function(type, listener) {
+  if ('function' !== typeof listener) {
+    throw new Error('addListener only takes instances of Function');
+  }
+
+  if (!this._events) this._events = {};
+
+  // To avoid recursion in the case that type == "newListeners"! Before
+  // adding it to the listeners, first emit "newListeners".
+  this.emit('newListener', type, listener);
+
+  if (!this._events[type]) {
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  } else if (isArray(this._events[type])) {
+
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+
+    // Check for listener leak
+    if (!this._events[type].warned) {
+      var m;
+      if (this._maxListeners !== undefined) {
+        m = this._maxListeners;
+      } else {
+        m = defaultMaxListeners;
+      }
+
+      if (m && m > 0 && this._events[type].length > m) {
+        this._events[type].warned = true;
+        console.error('(node) warning: possible EventEmitter memory ' +
+                      'leak detected. %d listeners added. ' +
+                      'Use emitter.setMaxListeners() to increase limit.',
+                      this._events[type].length);
+        console.trace();
+      }
+    }
+  } else {
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if ('function' !== typeof listener) {
+    throw new Error('.once only takes instances of Function');
+  }
+
+  var self = this;
+  function g() {
+    self.removeListener(type, g);
+    listener.apply(this, arguments);
+  };
+
+  g.listener = listener;
+  self.on(type, g);
+
+  return this;
+};
+
+EventEmitter.prototype.removeListener = function(type, listener) {
+  if ('function' !== typeof listener) {
+    throw new Error('removeListener only takes instances of Function');
+  }
+
+  // does not use listeners(), so no side effect of creating _events[type]
+  if (!this._events || !this._events[type]) return this;
+
+  var list = this._events[type];
+
+  if (isArray(list)) {
+    var position = -1;
+    for (var i = 0, length = list.length; i < length; i++) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener))
+      {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0) return this;
+    list.splice(position, 1);
+    if (list.length == 0)
+      delete this._events[type];
+  } else if (list === listener ||
+             (list.listener && list.listener === listener))
+  {
+    delete this._events[type];
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  if (arguments.length === 0) {
+    this._events = {};
+    return this;
+  }
+
+  // does not use listeners(), so no side effect of creating _events[type]
+  if (type && this._events && this._events[type]) this._events[type] = null;
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  if (!this._events) this._events = {};
+  if (!this._events[type]) this._events[type] = [];
+  if (!isArray(this._events[type])) {
+    this._events[type] = [this._events[type]];
+  }
+  return this._events[type];
+};
+
+}, (function (){ return typeof module=='object'?module:{exports:this};}).call(null));
+
+
+(function (){
+	
+	var ns,
+		emitter,
+		util;
+	
+	if(typeof module == 'object' && module.exports){
+		util=require('../lib/util');
+		ns=module.exports;
+		emitter=require('../lib/events').EventEmitter;
+	}else{
+		util=window.util;
+		ns=util.ns('Documentor');
+		emitter=window.EventEmitter;
+	}
+	
+	/**
+	 * @class Documentor.DocumentationRenderer
+	 * @constructor
+	 * @extends	EventEmitter
+	 * Base class for a documentation renderer.
+	 */
+	ns.DocumentationRenderer=function (cfg){
+//		util.extend(this, cfg);
+		ns.DocumentationRenderer.super_.apply(this, arguments);
+		this.initialize();
+	};
+	util.inherits(ns.DocumentationRenderer, emitter);
+
+	util.extend(ns.DocumentationRenderer.prototype, {
+		initialize:util.noop,
+		/**
+		 * @method render
+		 * Renders the documentation from the given API object
+		 * @param	{Documentor.Api}	api	The API object to render.
+		 */
+		render:function (){
+		    /**
+		     * @event render
+		     * Fires when the documentation is rendered.
+		     * @param {Documentor.Api} this
+		     */
+			this.emit('render', this);
+		}
+	});
+
+}());
 
 (function (){
 	

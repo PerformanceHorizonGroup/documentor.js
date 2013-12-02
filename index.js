@@ -13,7 +13,6 @@ function extend(obj, files){
 		});
 }
 
-extend(module.exports, ['./src/SourceLoader', './src/SourceProcessor']);
-extend(module.exports.render={}, ['./src/render/DocumentationRenderer']);
+extend(module.exports, ['./src/SourceLoader', './src/SourceProcessor', './src/DocumentationRenderer']);
 extend(module.exports.PHGDoc={}, ['./src/PHGDoc/PHGDocRenderer', './src/PHGDoc/PHGSourceProcessor']);
 

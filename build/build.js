@@ -47,7 +47,7 @@ function minify(fileName, cb){
 	}
 }
 
-(function (){
+var buildFns=[function (doneCb){
 	console.log('creating full package ...');
 	var outputFileName=outputPath+'documentor.js',
 		ws=fs.createWriteStream(outputFileName),
@@ -58,7 +58,7 @@ function minify(fileName, cb){
 			'../src/Documentor.js',
 			'../src/SourceLoader.js',
 			'../src/SourceProcessor.js',
-			'../src/render/DocumentationRenderer.js',
+			'../src/DocumentationRenderer.js',
 			
 			'../src/PHGDoc/PHGSourceProcessor.js',
 			'../src/PHGDoc/PHGDocRenderer.js'
@@ -75,11 +75,9 @@ function minify(fileName, cb){
 		ws.end();
 		
 		// try to pack it
-		minify(outputFileName);
+		minify(outputFileName, doneCb);
 	});
-}());
-
-(function (){
+},function (doneCb){
 	console.log('creating PHGDoc package ...');
 	var outputFileName=outputPath+'PHGDoc.js',
 		ws=fs.createWriteStream(outputFileName),
@@ -90,7 +88,7 @@ function minify(fileName, cb){
 //			'../src/Documentor.js',
 //			'../src/SourceLoader.js',
 //			'../src/SourceProcessor.js',
-			'../src/render/DocumentationRenderer.js',
+			'../src/DocumentationRenderer.js',
 			
 //			'../src/PHGDoc/PHGSourceProcessor.js',
 			'../src/PHGDoc/PHGDocRenderer.js'
@@ -107,6 +105,17 @@ function minify(fileName, cb){
 		ws.end();
 		
 		// try to pack it
-		minify(outputFileName);
+		minify(outputFileName, doneCb);
 	});
+}, function (doneCb){
+	// build the docs
+	require('../docs/docs.js');
+}];
+
+(function build(){
+	var fn=buildFns.shift();
+	fn&&fn(build);
 }());
+
+
+

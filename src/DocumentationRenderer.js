@@ -6,17 +6,17 @@
 		util;
 	
 	if(typeof module == 'object' && module.exports){
-		util=require('../../lib/util');
+		util=require('../lib/util');
 		ns=module.exports;
-		emitter=require('../../lib/events').EventEmitter;
+		emitter=require('../lib/events').EventEmitter;
 	}else{
 		util=window.util;
-		ns=util.ns('Documentor.render');
+		ns=util.ns('Documentor');
 		emitter=window.EventEmitter;
 	}
 	
 	/**
-	 * @class Documentor.render.DocumentationRenderer
+	 * @class Documentor.DocumentationRenderer
 	 * @constructor
 	 * @extends	EventEmitter
 	 * Base class for a documentation renderer.

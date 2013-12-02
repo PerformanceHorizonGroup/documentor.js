@@ -1,29 +1,29 @@
 
 (function (){
 	
-	var util, Documentor, SourceProcessor;
+	var util, ns, SourceProcessor;
 	if(typeof module == 'object' && module.exports){
 		util=require('../../lib/util');
 		SourceProcessor=require('../SourceProcessor').SourceProcessor;
-		Documentor=module.exports;
+		ns=module.exports;
 	}else{
 		util=window.util;
-		Documentor=util.ns('Documentor');
+		ns=util.ns('Documentor.PHGDoc');
 		SourceProcessor=Documentor.SourceProcessor;
 	}
 
 	/**
-	 * @class Documentor.PHGSourceProcessor
+	 * @class Documentor.PHGDoc.PHGSourceProcessor
 	 * @extends Documentor.SourceProcessor
 	 * @constructor
 	 * Source file processor for JS source code from PHG. It extracts and processes javaDoc style comments in source.
 	 * The set of tags it recognizes is mostly borrowed from ExtJS.
 	 */
-	Documentor.PHGSourceProcessor=function (cfg){
-		Documentor.PHGSourceProcessor.super_.apply(this, arguments);
+	ns.PHGSourceProcessor=function (cfg){
+		ns.PHGSourceProcessor.super_.apply(this, arguments);
 	};
 
-	util.inherits(Documentor.PHGSourceProcessor, SourceProcessor);
+	util.inherits(ns.PHGSourceProcessor, SourceProcessor);
 
 	var tagMatcher=new RegExp('^\\s*@([A-Za-z]+)(\\s+|$)');
 	var commentLineStartMatcher=/^\s*\*/,
@@ -37,7 +37,7 @@
 	 * TO-DO: implement tags to include contents from external files (eventually markdown, etc.)
 	 */
 	 
-	util.extend(Documentor.PHGSourceProcessor.prototype, {
+	util.extend(ns.PHGSourceProcessor.prototype, {
 		/**
 		 * @property	{Object}	docTagProcessors
 		 * A hash keyed by the tag names that this object can process. At each key there's a parser function which will be given a line to process. 
