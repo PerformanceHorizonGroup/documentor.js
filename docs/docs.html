@@ -9,16 +9,9 @@
 	<script type="text/javascript" src="../src/PHGDoc/resources/jquery-1.10.2.js"></script> 
 
 	<script type="text/javascript" src="../lib/other/markdown-js/markdown.js"></script>
-	<script type="text/javascript" src="../lib/util.js"></script>
-	<script type="text/javascript" src="../lib/events.js"></script>
-	<script type="text/javascript" src="../src/Documentor.js"></script>
-	<script type="text/javascript" src="../src/SourceLoader.js"></script>
-	<script type="text/javascript" src="../src/SourceProcessor.js"></script>
-	<script type="text/javascript" src="../src/render/DocumentationRenderer.js"></script>
+	<script type="text/javascript" src="../build/documentor.js"></script>
 	
-	<script type="text/javascript" src="../src/PHGDoc/PHGSourceProcessor.js"></script>
 	<link rel="stylesheet" href="../src/PHGDoc/resources/PHGDoc.css" type="text/css">
-	<script type="text/javascript" src="../src/PHGDoc/PHGDocRenderer.js"></script>
 
 	<script type="text/javascript">
 		var api=new Documentor.Api({
@@ -30,23 +23,21 @@
 				'../src/Documentor.js',
 				'../src/SourceLoader.js',
 				'../src/SourceProcessor.js',
-				'../src/render/DocumentationRenderer.js',
+				'../src/DocumentationRenderer.js',
 				'../src/PHGDoc/PHGSourceProcessor.js',
 				'../src/PHGDoc/PHGDocRenderer.js'
 			],
 			sourceLoader:new Documentor.AjaxSourceLoader(),
-			sourceProcessor:new Documentor.PHGSourceProcessor(),
-			renderer:new Documentor.render.PHGDocRenderer(),
+			sourceProcessor:new Documentor.PHGDoc.PHGSourceProcessor(),
 			listeners:{
-				'sourceProcessed':function (fileURL){
-					if(api.sourceFiles.length==0){ // if source processing is over
-						// try to set the content of README.md as the desription of the Documentor namespace 
-						var d=api.getNSObject('Documentor');
-						if(d){
-							api.sourceLoader.getSourceFile('../README.md', function (fileData, fileURL){
-								d.description=markdown.toHTML(fileData);
-							});
-						}
+				'sourceQueueEmpty':function (){
+					// try to set the content of README.md as the desription of the Documentor namespace 
+					var d=api.getNSObject('Documentor');
+					if(d){
+						api.sourceLoader.getSourceFile('../README.md', function (fileData, fileURL){
+							d.description=markdown.toHTML(fileData);
+							(new Documentor.PHGDoc.PHGDocRenderer()).render(api);
+						});
 					}
 				}
 			}
