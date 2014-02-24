@@ -19,7 +19,7 @@ These are the usual steps of the process:
 * and finally the API structure is passed on to a `Documentor.DocumentationRenderer` object which will generate the docs (whether as static files or will print them in the current browser page).
 
 ## Customization
-The classes in the package do not have many options to be configured but additional functionality can be added by sub-classing them. If for example you need to process different tags than what's available in `Documentor.PHGSourceProcessor` the easiest way to take is updating or adding in the `docTagProcessors` property. This will of course lead to the need to change the rendering object as it will have to be aware of the new tags and their meaning. 
+The classes in the package do not have many options to be configured but additional functionality can be added by sub-classing them. If for example you need to process different tags than what's available in `Documentor.PHGDoc.PHGSourceProcessor` the easiest way to take is updating or adding in the `docTagProcessors` property. This will of course lead to the need to change the rendering object as it will have to be aware of the new tags and their meaning. 
 
 ## Examples
 Those for now can only be found in the project's own _docs_ folder - there is `docs.html` which builds the documentation on-the-fly when loaded in the browser and `docs.js` which produces static documentation files when run in node.js.

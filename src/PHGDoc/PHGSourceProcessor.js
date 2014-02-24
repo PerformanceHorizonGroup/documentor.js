@@ -64,7 +64,7 @@
 					name=this.processingDataStorage.currentModuleObj.name+'.'+name;
 				var classNamePath = name.split('.'),
 					className=classNamePath.pop(),
-					nsObject=this.processingDataStorage.api.getNSObject(classNamePath, true),
+					nsObject = classNamePath.length ? this.processingDataStorage.api.getNSObject(classNamePath, true) : this.processingDataStorage.api.ns,
 					classObj=nsObject.children[className];
 				if(!classObj){
 					classObj={
