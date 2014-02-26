@@ -148,5 +148,13 @@ li.children-list:last-child{
 	color:#999999;
 }
 
+a.file-name{
+	text-decoration:none;
+	color:inherit;
+}
+a.file-name:hover{
+	text-decoration:underline;
+}
+
 
 

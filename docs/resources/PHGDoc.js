@@ -627,7 +627,7 @@ EventEmitter.prototype.listeners = function(type) {
 						html+='<div><span class="object-attributes">( '+flags.join()+' )</span></div>';
 				}
 				if('definedIn' in obj){
-					html+='<div class="defined-in"><em>defined in:</em> <span class="file-name" data-file-name="'+obj.definedIn+'">'+obj.definedIn.split('/').pop()+'</span></div>';
+					html+='<div class="defined-in"><em>defined in:</em> <a class="file-name" target="_blank" href="'+obj.definedIn+'">'+obj.definedIn.split('/').pop()+'</a></div>';
 				}
 				if(obj.description)
 					html+='<p>'+obj.description+'</p>';

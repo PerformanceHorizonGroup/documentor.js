@@ -1,6 +1,6 @@
 {
 	"name":"documentor.js",
-	"version":"0.2.6",
+	"version":"0.2.7",
 	"author":"PHG <techies@performancehorizon.com>",
 	"description":"Documentation generation tool",
 	"contributors":[{
