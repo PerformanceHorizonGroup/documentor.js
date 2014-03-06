@@ -80,10 +80,12 @@ li.children-list:last-child{
 	padding: 5px 15px 10px;
 	position:relative;
 }
-.hierarchy{
-	margin-left:20px;
-	padding:0px 10px;
+.right-side-panel{
 	float:right;
+}
+.hierarchy{
+	padding:0px 10px;
+	margin-bottom:10px;
 }
 .hierarchy-item-title{
 	cursor:default;

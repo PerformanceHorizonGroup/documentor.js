@@ -591,6 +591,8 @@ EventEmitter.prototype.listeners = function(type) {
 				var hierarchy=[[obj.name, obj]],
 					html='',
 					list;
+					
+				var rightSidepanel='';
 				if('extends' in obj){
 					var parentClass=obj['extends'],
 						parentClassObj=api.getNSObject(parentClass);
@@ -608,15 +610,24 @@ EventEmitter.prototype.listeners = function(type) {
 							parentClass=null;
 					}while(parentClass);
 					var cls=hierarchy[0];
-					html+='<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title'+(cls[1]?(' obj-link" ns-path="'+cls[0]+'"'):'"')+'>'+cls[0]+'</div>';
+					rightSidepanel+='<div class="hierarchy"><em>hierarchy:</em> <div class="hierarchy-item"><div class="hierarchy-item-title'+(cls[1]?(' obj-link" ns-path="'+cls[0]+'"'):'"')+'>'+cls[0]+'</div>';
 					var ending='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title">'+hierarchy[hierarchy.length-1][0]+'</div></div>' +
 							'</div></div>';
 					for(var i=1; i<hierarchy.length-1; i++){
-						html+='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title'+(hierarchy[i][1]?(' obj-link" ns-path="'+hierarchy[i][0]+'"'):'"')+'>'+hierarchy[i][0]+'</div>';
+						rightSidepanel+='<div class="hierarchy-item hierarchy-sub-item"><div class="hierarchy-item-title'+(hierarchy[i][1]?(' obj-link" ns-path="'+hierarchy[i][0]+'"'):'"')+'>'+hierarchy[i][0]+'</div>';
 						ending+='</div>';
 					}
-					html+=ending;
+					rightSidepanel+=ending;
 				}
+				if(obj.mixins.length){
+					rightSidepanel+='<div class="hierarchy"><em>mixins:</em>';
+					for(var i=0; i<obj.mixins.length; i++)
+						rightSidepanel+='<div class="hierarchy-item"><div class="hierarchy-item-title obj-link" ns-path="'+obj.mixins[i]+'">'+obj.mixins[i]+'</div></div>';
+					rightSidepanel+='</div>';
+				}
+				if(rightSidepanel)
+					html+='<div class="right-side-panel">'+rightSidepanel+'</div>';
+
 				html+='<div><em>'+(obj.type!='api'?obj.type:'')+'</em> <strong>'+obj.name+'</strong>';
 				if(!$.isEmptyObject(obj.flags)){
 					var flags=[];
