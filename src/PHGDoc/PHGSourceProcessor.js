@@ -55,6 +55,14 @@
 				this.processingDataStorage.currentNamespaceObj=nsObject;
 				this.processingDataStorage.currentDescribableObj=nsObject;
 			},
+			'mixin':function (line){
+				if(this.processingDataStorage.currentDescribableObj){	// must be part of a class description
+					this.processingDataStorage.currentClassObj.mixins.push(line);
+				}else{	// must be a mixin object description
+					this.docTagProcessors['class'].call(this, line);	// let the mixin behave like a regular class object
+					this.processingDataStorage.currentClassObj.type='mixin';
+				}
+			},
 			'class':function (line){
 				// start a new class definition
 				// the text after @class is taken as the name of the class and the rest of the line is a short summary of the class
@@ -75,7 +83,8 @@
 						methods:{},
 						events:{},
 						definedIn:this.processingDataStorage.fileURL,
-						flags:{}
+						flags:{},
+						mixins:[]
 					};
 					nsObject.children[className]=classObj;
 				}
