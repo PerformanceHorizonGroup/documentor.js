@@ -193,7 +193,7 @@
 					}
 					rightSidepanel+=ending;
 				}
-				if(obj.mixins.length){
+				if(obj.mixins && obj.mixins.length){
 					rightSidepanel+='<div class="hierarchy"><em>mixins:</em>';
 					for(var i=0; i<obj.mixins.length; i++)
 						rightSidepanel+='<div class="hierarchy-item"><div class="hierarchy-item-title obj-link" ns-path="'+obj.mixins[i]+'">'+obj.mixins[i]+'</div></div>';
