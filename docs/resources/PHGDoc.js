@@ -619,7 +619,7 @@ EventEmitter.prototype.listeners = function(type) {
 					}
 					rightSidepanel+=ending;
 				}
-				if(obj.mixins.length){
+				if(obj.mixins && obj.mixins.length){
 					rightSidepanel+='<div class="hierarchy"><em>mixins:</em>';
 					for(var i=0; i<obj.mixins.length; i++)
 						rightSidepanel+='<div class="hierarchy-item"><div class="hierarchy-item-title obj-link" ns-path="'+obj.mixins[i]+'">'+obj.mixins[i]+'</div></div>';
@@ -835,8 +835,8 @@ EventEmitter.prototype.listeners = function(type) {
 					$(this).parent().toggleClass('expanded');
 				});
 
-				$(window).bind( 'hashchange', renderObjectFromHash);
-				$(window).bind('resize', function (){
+				$(window).bind( 'hashchange.documentor', renderObjectFromHash);
+				$(window).bind('resize.documentor', function (){
 					$('#selectionInfoWrap, #apiTreeWrap', containerSelector).height($(window).height()-10);
 				});
 				this.hasAttachedListeners=true;
@@ -850,7 +850,7 @@ EventEmitter.prototype.listeners = function(type) {
 					renderObj(obj);
 				}
 			}
-			$(window).trigger('resize');
+			$(window).trigger('resize.documentor');
 			(function (){
 				// run through all classes and compile their "subclasses"
 				function processObj(obj){

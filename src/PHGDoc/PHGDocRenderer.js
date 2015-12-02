@@ -409,8 +409,8 @@
 					$(this).parent().toggleClass('expanded');
 				});
 
-				$(window).bind( 'hashchange', renderObjectFromHash);
-				$(window).bind('resize', function (){
+				$(window).bind( 'hashchange.documentor', renderObjectFromHash);
+				$(window).bind('resize.documentor', function (){
 					$('#selectionInfoWrap, #apiTreeWrap', containerSelector).height($(window).height()-10);
 				});
 				this.hasAttachedListeners=true;
@@ -424,7 +424,7 @@
 					renderObj(obj);
 				}
 			}
-			$(window).trigger('resize');
+			$(window).trigger('resize.documentor');
 			(function (){
 				// run through all classes and compile their "subclasses"
 				function processObj(obj){
